@@ -1,0 +1,176 @@
+{
+ "1": {
+  "handler": "0x15bbd",
+  "strings": [
+   "\\",
+   "\\",
+   "[%s:%d] OEMCrypto_OpenSession: input is invalid!\\n",
+   "[%s:%d] OEMCrypto_OpenSession: malloc() failed!\\n"
+  ],
+  "guess": "[%s:%d] OEMCrypto_OpenSession: input is invalid!\\n"
+ },
+ "2": {
+  "handler": "0x15c89",
+  "strings": [
+   "\\",
+   "[%s:%d] OEMCrypto_CloseSession: input is invalid!\\n",
+   "[%s:%d] pst = %s\\n",
+   "[%s:%d] pst_size = %d\\n"
+  ],
+  "guess": "[%s:%d] OEMCrypto_CloseSession: input is invalid!\\n"
+ },
+ "3": {
+  "handler": "0x15e17",
+  "strings": [
+   "[%s:%d] OEMCrypto_GenerateDerivedKeys: input is invalid!\\n",
+   "[%s:%d] OEMCrypto_GenerateDerivedKeys: aes 128 cmac failed!\\n",
+   "[%s:%d] OEMCrypto_GenerateDerivedKeys: malloc() failed!\\n"
+  ],
+  "guess": "[%s:%d] OEMCrypto_GenerateDerivedKeys: input is invalid!\\n"
+ },
+ "4": {
+  "handler": "0x16451",
+  "strings": [
+   "\\",
+   "[%s:%d] OEMCrypto_GenerateNonce: NULL pointer!\\n",
+   "[%s:%d] addNonceToCache failed \\n",
+   "\\"
+  ],
+  "guess": "[%s:%d] OEMCrypto_GenerateNonce: NULL pointer!\\n"
+ },
+ "5": {
+  "handler": "0x165cf",
+  "strings": [
+   "[%s:%d] Error: OEMCrypto_GenerateSignature: input is invalid!\\n",
+   "[%s:%d] Error: OEMCrypto_GenerateSignature qsee_hmac failed!\\n",
+   "\\"
+  ],
+  "guess": "[%s:%d] Error: OEMCrypto_GenerateSignature: input is invalid!\\n"
+ },
+ "6": {
+  "handler": "0x1684f",
+  "strings": [
+   "[%s:%d] Error: OEMCrypto_LoadKeys_V8: NULL pointers!\\n",
+   "[%s:%d] Error: OEMCrypto_LoadKeys_V8 has not been called!\\n",
+   "[%s:%d] Error: OEMCrypto_LoadKeys_V8: malloc() failed!\\n"
+  ],
+  "guess": "[%s:%d] Error: OEMCrypto_LoadKeys_V8: NULL pointers!\\n"
+ },
+ "7": {
+  "handler": "0x16f1d",
+  "strings": [
+   "\\",
+   "\\",
+   "\\",
+   "[%s:%d] Error: OEMCrypto_SelectKey: NULL pointers!\\n"
+  ],
+  "guess": "[%s:%d] Error: OEMCrypto_SelectKey: NULL pointers!\\n"
+ },
+ "8": {
+  "handler": "0x17aaf",
+  "strings": [
+   "\\",
+   "[%s:%d] Error: wv_dash_core_refresh_keys input is invalid\\n",
+   "\\"
+  ],
+  "guess": "[%s:%d] Error: wv_dash_core_refresh_keys input is invalid\\n"
+ },
+ "9": {
+  "handler": "0x17c1d",
+  "strings": [
+   "[%s:%d] Error: data_addr = 0x%x, data_length = 0x%x\\n",
+   "[%s:%d] Error: iv = %x, data_length = %x\\n",
+   "[%s:%d] Error: block_offset %d is larger than 16! \\n",
+   "[%s:%d] Error: decryption failed!\\n"
+  ],
+  "guess": "[%s:%d] Error: OEMCrypto_DecryptCTR return %d!  ctxID = %d\\n"
+ },
+ "10": {
+  "handler": "0x18027",
+  "strings": [
+   "[%s:%d] Error: OEMCrypto_RewrapDeviceRSAKey: input is invalid!\\n",
+   "[%s:%d] Error: OEMCrypto_RewrapDeviceRSAKey failed: %d\\n"
+  ],
+  "guess": "[%s:%d] Error: OEMCrypto_RewrapDeviceRSAKey: input is invalid!\\n"
+ },
+ "11": {
+  "handler": "0x1cff9",
+  "strings": [
+   "\\",
+   "[%s:%d] OEMCrypto_Dash_InstallKeybox: Invalid keybox length\\n",
+   "[%s:%d] OEMCrypto_Dash_InstallKeybox: Keybox NULL pointer!.\\n",
+   "[%s:%d] OEMCrypto_Dash_InstallKeybox: qsee_sfs_open() failed\\n"
+  ],
+  "guess": "[%s:%d] OEMCrypto_Dash_InstallKeybox: Invalid keybox length\\n"
+ },
+ "12": {
+  "handler": "0x1d17f",
+  "strings": [
+   "\\",
+   "[%s:%d] OEMCrypto_Dash_IsKeyboxValid: malloc() failed!\\n",
+   "[%s:%d] %s: memscpy test keybox failed.\\n",
+   "[%s:%d] OEMCrypto_Dash_IsKeyboxValid: qsee_sfs_open() failed.\\n"
+  ],
+  "guess": "[%s:%d] OEMCrypto_Dash_IsKeyboxValid: malloc() failed!\\n"
+ },
+ "13": {
+  "handler": "0x1d693",
+  "strings": [
+   "[%s:%d] Error: OEMCrypto_GetKeyData: keyData NULL pointer!\\n",
+   "[%s:%d] Error: OEMCrypto_GetKeyData: qsee_sfs_open() failed.\\n",
+   "[%s:%d] Error: Error: OEMCrypto_GetKeyData: malloc() failed!\\n",
+   "[%s:%d] Error: OEMCrypto_GetKeyData: qsee_sfs_close() failed.\\n"
+  ],
+  "guess": "[%s:%d] Error: OEMCrypto_GetKeyData: keyData NULL pointer!\\n"
+ },
+ "14": {
+  "handler": "0x1d9f9",
+  "strings": [
+   "\\",
+   "[%s:%d] OEMCrypto_GetRandom: randomData NULL pointer!\\n",
+   "\\"
+  ],
+  "guess": "[%s:%d] OEMCrypto_GetRandom: randomData NULL pointer!\\n"
+ },
+ "15": {
+  "handler": "0x2635d",
+  "strings": [],
+  "guess": ""
+ },
+ "16": {
+  "handler": "0x1de3d",
+  "strings": [
+   "LVL1",
+   "[%s:%d] OEMCrypto_Dash_InstallEncapKeybox begins!\\n",
+   "[%s:%d] outBuffLen is: %d\\n",
+   "[%s:%d] OEMCrypto_Dash_InstallEncapKeybox: Bytes written = %d!\\n"
+  ],
+  "guess": "[%s:%d] OEMCrypto_Dash_InstallEncapKeybox begins!\\n"
+ },
+ "17": {
+  "handler": "0x18683",
+  "strings": [
+   "\\",
+   "\\",
+   "[%s:%d] Error: OEMCrypto_LoadDeviceRSAKey: input is invalid!\\n",
+   "[%s:%d] OEMCrypto_LoadDeviceRSAKey: malloc() failed!\\n"
+  ],
+  "guess": "[%s:%d] Error: OEMCrypto_LoadDeviceRSAKey: input is invalid!\\n"
+ },
+ "18": {
+  "handler": "0x18b55",
+  "strings": [
+   "\\"
+  ],
+  "guess": "\\"
+ },
+ "19": {
+  "handler": "0x18d6f",
+  "strings": [
+   "[%s:%d] OEMCrypto_DeriveKeysFromSessionKey: input is invalid!\\n",
+   "[%s:%d] allowed_scheme = 0x%x, invalid\\n",
+   "[%s:%d] OEMCrypto_DeriveKeysFromSessionKey: malloc() failed!\\n"
+  ],
+  "guess": "[%s:%d] OEMCrypto_DeriveKeysFromSessionKey: input is invalid!\\n"
+ }
+}

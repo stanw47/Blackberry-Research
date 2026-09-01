@@ -1,0 +1,71 @@
+20 - Retrieving persistent data struct
+21 - Retrieving Bootrom Log
+39 -
+3A -
+50 - Get TZ & etc info
+AB - Getting the JDM BSN
+AC -
+AD - Retrieving PMIC Info
+AE - Erase blocked FW versions lists
+AF -
+B0 - Bugdisp log
+B1 - Retrieving Flash IDs
+B2 - Retrieving DSP OS Metrics
+B3 - Retrieving Loader Action Log
+B4 - Retrieving Flash Regions Info
+B5 - Retrieving Flash Info
+B6 - USBMS
+B7 - HASH_BOOTROM
+BD - Retrieving Hardware Override ID
+BE - Setting Hardware Override ID
+BF - Retrieving DRAM Info
+C0 40 - Requesting COMPLETE
+C2 -
+C3 -
+C4 - READVERIFY   00 dword(addr) dword(size) byte(val)
+C6 - FACTORY_WIPE
+C8 - GRS_WIPE
+C9 - USB Test
+CB - Retrieving OS boot error info
+CC -
+CD -
+D0 -
+D1 - Retrieving SVN
+D2 - Retrieving Kernel Metrics
+D3 - Retrieving App Metrics
+D4 - Appstore NUKE
+D5 - SUPER_NUKE
+D7 - SetActiveMCT
+D8 - OS metrics
+D9 - Retrieving MCT
+DA - HIS
+DB - Retrieving Vendor ID
+DC - DO_CRC_VERIFY
+DD - FLASH_DUMP
+DE - BOOT_MODE
+E0 - REMOVE_INSTALLER
+E1 - Retrieving Installer Metrics
+E3 - ADD_OS_EXTENDED
+E4 - CREAD INIT
+E5 - CREAD 00 dword(addr?) dword (size<=0x3FA0)
+E6 -
+E7 - Getting the Device PIN
+E8 - WIPE_SECURITY
+E9 - Retrieving boot count info
+EA - Getting the Device BSN
+EB -
+EC - Retrieving Blocked OS CFP
+ED - Retrieving Blocked Radio OS CFP
+EE - ERASE_SECTOR
+EF 80 - Reboot
+F1 - Upgrading MCT to resizable partitions
+F2 - Resizing MCT partition
+F3 - ERASE_ALL_MCT
+F4 - Retrieving the Number of UMPs
+F5 - Retrieving UMP Information
+F6 - Downgrading a resizable MCT to dynamic
+F7 - Write data
+F8 - Write data
+F9 40 - SIGNATURE_TRAILER
+FD -
+FF - Retrieving DDR Info

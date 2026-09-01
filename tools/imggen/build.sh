@@ -1,0 +1,25 @@
+pyinstaller \
+    --noconfirm \
+    --log-level=WARN \
+    --onefile \
+    --nowindow \
+    --add-binary "files/aboot.mbn:files" \
+    --add-binary "files/bbss.mbn:files" \
+    --add-binary "files/blog.img:files" \
+    --add-binary "files/boardid.img:files" \
+    --add-binary "files/boot_gpt_insecure.bin:files" \
+    --add-binary "files/boot_gpt_secure.bin:files" \
+    --add-binary "files/NON-HLOS.bin:files" \
+    --add-binary "files/nvuser.img:files" \
+    --add-binary "files/perm.img:files" \
+    --add-binary "files/prdid.img:files" \
+    --add-binary "files/rpm.mbn:files" \
+    --add-binary "files/sbl1.mbn:files" \
+    --add-binary "files/sbl1r.mbn:files" \
+    --add-binary "files/sdi.mbn:files" \
+    --add-binary "files/stage1.mbn:files" \
+    --add-binary "files/stage2.mbn:files" \
+    --add-binary "files/stage3.mbn:files" \
+    --add-binary "files/tz.mbn:files" \
+    --add-binary "files/user_gpt.bin:files" \
+	main.py

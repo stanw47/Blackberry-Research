@@ -1,0 +1,969 @@
+================================================================================
+PRIV STV100-1 UNSIGNED-BOOT / UNLOCK RESEARCH LOG  (MERGED MASTER)
+================================================================================
+Device: BlackBerry Priv STV100-1, serial/BSN 1161797525, PIN 0x2c3d3fe1
+Build:  AAW068 (Android 6.0.1, security patch 2017-10-05), variant "na"
+        (ro.product.name=venicena)
+Kernel: 3.10.84-perf-gd46863f (gcc 4.9.x-google) #1 SMP PREEMPT Fri Mar 2 2018
+        aarch64. GRSECURITY/PaX hardened. KASLR DISABLED (deterministic offsets).
+Host:   Parrot OS, user stanw47
+Goal:   Boot an unsigned/custom boot image (LineageOS) on the Priv, bypassing
+        aboot's boot-image verification (BlackBerry ECDSA).
+
+------------------------------------------------------------------------------
+ABOUT THIS FILE
+------------------------------------------------------------------------------
+This is the merged MASTER of two previously-divergent copies of the running log:
+  - LOCAL:  /home/stanw47/priv-research/priv-research-log.txt
+  - FLASH:  /media/stanw47/Ventoy/priv-research-log.txt
+Both copies are now byte-identical and must be kept in sync. This master
+contains every finding from both lineages, de-duplicated and ordered roughly
+chronologically. Last merged 2026-08-29.
+
+Related (separate) logs for the BB10 devices:
+  - /media/stanw47/Ventoy/classic-research-log.txt
+  - /media/stanw47/Ventoy/passport-research-log.txt
+
+================================================================================
+1. MISSION STATE AT A GLANCE
+================================================================================
+- STOCK boot.img + boot.img.sig (AAW068) flashed back: Android boots (6.0.1,
+  security patch 2017-10-05, SELinux Enforcing, dm-verity ACTIVE+ENFORCING,
+  user build, adb root REFUSED).
+- OTA token download via preinstalled TokenLoader app = DEAD (TLS cert pinning
+  fails against live server; details in section 5).
+- fastboot attack surface = closed (authboot gates; verified session 3/4).
+- fastboot flash of aboot/sbl1/tz/rpm/hyp/pmic/sdi/boot/recovery = allowed.
+- ATTACKED: patch aboot (bypass the ECDSA gate) -> flash -> REJECTED by SBL1
+  (device bricked then recovered). See section 8 (incident).
+- CURRENT STATE: every software/factory/token/EDL/downgrade path is gated on a
+  SHIPPED retail unit. Remaining leads: kernel exploit (root) or hardware
+  (eMMC ISP / EDL test points / chip-off). See sections 17-19.
+
+================================================================================
+2. DEVICE / FIRMWARE FACTS
+================================================================================
+- Build AAW068 (Android 6.0.1, patch 2017-10-05), variant "na", serial
+  1161797525, bootmode PRODUCT_MODE, authboot_api_ver 1.3, security enabled.
+  ro.build.type=user, SELinux enforcing.
+- Primary bootchain AAW068, backup bootchain AAC603.
+- BSN 1161797525, PIN 0x2c3d3fe1 (real values).
+- /proc/version: 3.10.84-perf-gd46863f (gcc 4.9.x-google) Fri Mar 2 2018.
+  Kernel build is NEWER than the 2017-10-05 security-patch label (BB backported
+  some post-Oct-2017 fixes; each CVE must be checked individually).
+- Kernel is GRSECURITY/PaX hardened - CONFIRMED via kernel image strings:
+  "aarch64GRSEC", "3PAX: bytes at PC", "grsec: denied exec of usermode helper
+  binary ... outside of /sbin and system library paths".
+- KASLR DISABLED (kallsyms shows 0x0 due to kptr_restrict=2, but offsets are
+  deterministic). PAGE_OFFSET 0xffffffc000000000, kernel text base
+  0xffffffc000080000 (text_offset 0x80000). Kernel VA = file_offset + 0xffffffc000080000.
+- Partitions flashable WITHOUT authboot (verified live):
+    boot, recovery, bootsig, recoverysig,
+    aboot, sbl1, tz, rpm, hyp, pmic, sdi, modemst1, modemst2
+- Partitions DENIED without authboot (verified live):
+    devinfo, bootselect, debug_token, gsign, keystore, crypto, metadata,
+    carrier, rfcal, rfbackup, bcota, boot0hwi, phyboot1hwi, nvuser, perm,
+    LOGO/spla, arbitrary names
+- `oem set-factory-mode` -> "authboot command permission denied" (gated, type6).
+- `oem set-product-mode` -> SUCCESS (unprivileged, writes RPMB, no-op).
+- `oem getvarp:`/`mmcinfo`/`gptinfo`/`read` -> authboot denied.
+- fastboot RAM-boot (`fastboot boot`) = NOT implemented ("Not supported").
+- No firehose programmer in the autoloaders; EDL reachable at SBL level via
+  key combo only; no way to trigger EDL from aboot fastboot.
+- mfi flag (Gate1) previously armed (see notes) - does NOT open the
+  debug_token / nvram / factory-mode gates (re-verified 2026-08-19).
+- getvar product reports MSM8994 (vs docs MSM8992) - discrepancy not resolved.
+- hlos-sig-tag: EMPTY on this unit (no anti-rollback gate). See section 15.
+
+================================================================================
+3. ABOOT AUTH-BOOT MECHANISM (fully decoded, sessions 3-4)
+================================================================================
+- aboot = emmc_appsboot.mbn, LOAD seg off 0x8000 -> va 0xf900000,
+  file_off = va - 0xf8f8000. ARM mode (CS_MODE_ARM), image base 0xf8f8000.
+- Boot image loader at 0xf92d5d4:
+    0xf92d9d0: bl 0xf94d464      <- auth gate (r0=handle,r1=struct,r2=size)
+    0xf92d9d4: cmp r0,#0
+    0xf92d9d8: bne 0xf92da00     <- nonzero = AUTH OK -> continue boot
+    0xf92d9dc: (zero) prints "Authenticating boot image failed!" then
+    0xf94ca14 factory/blocklist check:
+        result==0 -> "Device is in factory mode continuing..." CONTINUE ANYWAY
+        result==2 -> NV-fatal; else abort.
+- Auth dispatcher 0xf94d464:
+    magic 0xef50b41 ("APBI") found -> ECDSA verify vs 4 embedded keys
+      (table at 0xf9d42ac: ABDI/ABBI/APBI/ACBI -> cert data; verify 0xf94d378).
+    magic MISS:
+      0xf94e094 insecure-check == 0 -> "Ignoring auth failure on insecure
+      device" -> SUCCESS (bbss_insecure=="true", TZ-signed NV, not settable).
+      0xf93dd38 debug-token check != 0 -> "Debug token hlos_unsigned is
+      active. Skipping image verification" -> SUCCESS
+      (reads /nvuser/hlos_unsigned.tkn, 'state' field == "development").
+      else -> error 0x41.
+- Bootmode/FACTORY: RPMB field BOOT_MODE_TYPE=="FACTORY_MODE" (0xf94ca14)
+  -> continue on auth fail. Set only via oem set-factory-mode (gated) or
+  first-boot init 0xf94d240 (fuse 0xfc4b81f8 bit 0x2000000; inert once set).
+- "Device is unlocked! Skipping verification..." and "Keystore verification
+  failed! Continuing anyways..." = DEAD strings in AAW068 AND STV100-1.
+- Fastboot dispatch: whitelist 0xf9d1774 (35 cmds); types 0 free,
+  1 = FUN_0f93e8bc (BBSS sec-config, 0 => allow), 2-10 = authboot mux
+  0x1000+ via FUN_0f935098 (needs work-level 0xfa79978 == 6).
+- Per-partition flash gate: FUN_0f935380 (used by flash:/erase:) consults
+  table @0xf9d12cc (56 entries). authboot-required partitions get denied;
+  boot/aboot/sbl1/tz/... free. In-handler: NO content signature check
+  (only sparse/ANDROID! parsing); boot-time verify catches unsigned later.
+- No memory-corruption primitive in any type-0/type-1 fastboot handler.
+
+=> The boot-image gate is ECDSA (not RSA). aboot itself is freely flashable,
+   BUT SBL1 re-verifies aboot integrity (SHA256) on this device (see section 8),
+   so the "patch aboot" route is dead unless SBL1 is modified (PBL verifies SBL1
+   with fused root key -> cannot modify SBL1 either).
+
+================================================================================
+4. PATCHED-ABOOT PLAN (ATTEMPTED -> DEAD, see section 8)
+================================================================================
+- Patch target: make the auth-fail path at 0xf92d9d4/0xf92d9d8 continue boot.
+  Single-byte option: BNE 0xf92da00 -> B 0xf92da00 (cond nibble 0x1 -> 0xE).
+- Patch at file off 0x359db (va 0xf92d9d8): bne(0x1a)->b(0xea).
+- Stock aboot: /home/stanw47/priv-research/fw/img/emmc_appsboot.mbn
+  md5 b714780f316ecbb6620e324801f8c8fd.
+- RESULT: SBL1 REJECTS the modified aboot (permanent hang unless restored via
+  Power+Mute fastboot). See section 8.
+
+================================================================================
+5. TOKENLOADER APP / OTA PATH (investigated, DEAD for OTA)
+================================================================================
+- com.blackberry.tokenloader (uid 10033) preinstalled at
+  /system/priv-app/com.blackberry.tokenloader/ (PRIVILEGED system app).
+- Launches via dial code *#43886536# (receiver TokenActivationHandler,
+  android_secret_code://43886536).
+- Binder service "TokenService" (system server, com.android.server.TokenService)
+  proxies to daemon bb_tokenserviced over /dev/socket/tokenservice.
+  Methods: 1=isTokenPresent(String), 2=getTokenPayload(String),
+            4=writeToken([B), plus eraseDebugTokens.
+  Permission gate: com.blackberry.permission.WRITE_TOKENS (prot=signature,
+  sourcePackage=android) via checkComponentPermission(perm, uid, -1, true);
+  uid 0/1000 pass; shell(2000) DENIED ("You need Write Token permission to:...").
+- App "Start" -> HTTPS GET https://stmtoken.services.blackberry.com/
+  stmserver/ota/tokens?user=ota-request with headers api_key=
+  l2t3DF611L1AfUjO295hMJjVVb7b72h9 and bsn=<ro.serialno>.
+  TLS trust = ONLY two embedded CAs (res/raw):
+    stmportal_root.cer    : BB leaf cert CN=stmtokenservice.rim.net,
+                            valid 2015-03-13 .. 2016-04-02 (EXPIRED)
+    stm_portal_root_ext.cer: thawte Primary Root CA (public root, 2006-2036)
+  Live server presents *.services.blackberry.com from DigiCert Global G2
+  TLS RSA SHA256 2020 CA1 (2026-02-02..2027-02-25).
+  => "Trust anchor for certification path not found" -> OTA download dead.
+  Clock rollback cannot help (leaf is a 2026 DigiCert cert; no thawte chain;
+  cannot forge BB anchor's private key).
+- Binder empirically: `service call TokenService 1` = String NPE,
+  `2 s16 hlos_unsigned.tkn` -> empty Parcel (no token), `4` = SecurityException
+  for shell. GET works for shell; WRITE does not.
+- Replacing the app with a self-signed patched APK = dead: WRITE_TOKENS is
+  signature-level (platform key); install would drop the permission.
+- Patching the APK in place on /system = dead: dm-verity ACTIVE+ENFORCING
+  (ro.boot.veritymode=enforcing), modified /system will not boot; no
+  system.img.sig exists but verity blocks regardless.
+- token_client binary = read-only "is token present" checker. Useless.
+
+================================================================================
+6. BB FACTORY CHAIN OVER USB (bbauthd) - MAPPED, NOT EXPLOITED
+================================================================================
+- bbauthd runs as `bbauth` domain (service in init.oem.rc, socket
+  /dev/socket/bbauth seqpacket 660 bbauth bbauth, user bbauth, groups
+  bbauth nvram deviceid devicepwd drmrpc). Started when USB config
+  includes the `bbauth` function (currently mtp,adb -> interface 2,
+  subclass 1, protocol 255, EP4 bulk on host = bbauth).
+- bbauthd SELinux: can create vtnvfs_id_file / vtnvfs_noid_file (nvram fs
+  token files). It is the factory token writer.
+- Channel names (in bbauthd rodata): AUTHBOOT-venice* , DBGSIG-venice*
+  (apac/att/emea/na/vzw), NVSIG-venice*, DDT-venice*, STP-venice*.
+- Protocol: control packets (ECHO/INFO/RESET/OPEN/TERM/REGISTER/ENCRYPT/
+  CLOSE/DEREGISTER), channel-based, optional encryption challenge
+  (ECC-521/RSA-1024, sb_ecc521_verify_sign, password_chall_verify_v1,
+  rtas_create_nv_sig_challenge / rtas_verify_nv_sig_response via
+  bbauthtoold).
+- bbauthd state=0; channels uninitialized; NO 0->2 transition command found.
+  INFO_REQUEST (guid/pin/ESN/MEID/IMEI) works; encrypted channels gated.
+- stp_server (the mfg hub daemon) is NOT running: starts only when
+  ro.boot.inproductionflag=true (init.factory.sfi.rc: ro.start_stp=true ->
+  class_start stp). Current value false. `setprop ctl.start stp_server`
+  from shell = SELinux-denied (no ctl_stp_server_prop rule for shell).
+  shell cannot transition to stp_server domain (no exec transition rule).
+- Status: DBGSIG channel payload format + signature verification not yet
+  fully decoded. LOW-MEDIUM confidence it can be driven from host without
+  BlackBerry private keys.
+
+================================================================================
+7. ROOT OPTIONS (kernel exploit surface)
+================================================================================
+- Kernel 3.10.x (msm8994/8992), patch level 2017-10-05 (build Mar 2018).
+- Verified primitives for a kernel exploit:
+    commit_creds        = 0xffffffc00024a840
+    prepare_kernel_cred = 0xffffffc00024ab74
+    (CORRECT values; earlier wrong values 0x187b8c/0x19f450 were corrected via
+     kallsyms extraction - see section 10.)
+  Other verified symbols:
+    selinux_enforcing   = 0xffffffc001649178
+    init_cred           = 0xffffffc00162d688
+- /dev/kgsl-3d0 world-writable (crw-rw-rw- system system 236,0) - PRIMARY vector.
+- /dev/binder (0666), /dev/ashmem (0666) accessible.
+- /dev/ion (0664 system), /dev/adsprpc-smd (0664 system) NOT accessible.
+- /dev/qseecom = 0660 system drmrpc, SELinux tee_device -> shell denied even
+  stat/list (see section 17).
+- /sys/kernel/debug/ion/ readable (audio/adsp/mm/qsecom/system heaps) -> physical
+  address leak via %pa (CONFIRMED LIVE: PAs 0xCD020000, 0xCE300000).
+- shell CapEff=0 (no capabilities); CapBnd=0xc0 (SETUID+SETGID in bounding set).
+  => all socket exploits (AF_PACKET CVE-2017-7308, DCCP, etc.) ruled out.
+- PaX flags "Pemrs": MPROTECT OFF (RWX allowed), PAGEEXEC ON. NO_NEW_PRIVS=0,
+  Seccomp=0.
+- If uid 0 obtained: `service call TokenService 4 i32 96 <token bytes>`
+  would pass checkComponentPermission (uid 0 auto-granted) -> writeToken
+  -> hlos_unsigned.tkn -> reboot -> aboot debug-token path skips verify.
+
+16 kernel vectors runtime-CONFIRMED DEAD (SaintPepsi + our tests):
+  DirtyCOW (GRSEC mem_rw block + ptrace EPERM), kref patches (CVE-2016-3842/
+  13905/5831), Binder UAF (GRSEC per-callsite slab isolation), towelroot,
+  perf_event paranoid=3, process_vm_writev ENOSYS, SysV IPC ENOSYS, QuadRooter
+  (all 4 patched), etc.
+
+================================================================================
+8. INCIDENT: PATCHED-ABOOT BRICK + RECOVERY (MUTE KEY FASTBOOT)
+================================================================================
+2026-08-19 ~13:10:
+- Patched aboot created: stock emmc_appsboot.mbn
+  md5 b714780f316ecbb6620e324801f8c8fd
+  -> /tmp/opencode/aboot_patched.mbn md5 81135663fa6f832e6b14f6c11e801897
+  Patch: single byte at file off 0x359db (va 0xf92d9d8): bne(0x1a)->b(0xea).
+- fastboot flash aboot aboot_patched.mbn: OKAY, wrote 1453KB.
+- fastboot reboot: OKAY.
+- RESULT: device does NOT enumerate USB at all (no adb, no fastboot, no
+  lsusb 0fca entry) for 5+ minutes. No fallback to backup bootchain.
+  => SBL1 (or PBL) REJECTS the modified aboot at load (device stuck at
+     SBL/secureboot stage). CONFIRMS SBL1 verifies aboot integrity (SHA256).
+- CONCLUSION: byte-flipped aboot is NOT bootable; the boot chain authenticates
+  aboot itself (QCOM secureboot). aboot-patch route = DEAD.
+
+DEVICE RECOVERED - MUTE KEY EDL:
+- WORKING COMBO (user-discovered, record this!): Power button + Mute button
+  held for ~30 SECONDS. Keep holding when you see a SOLID BLUE LED lasting
+  2-3 seconds, then it boots into Boot Mode (fastboot, USB 0fca:8030).
+- Boot mode USB PIDs observed: 0fca:8030 = fastboot (BB boot mode, serial=BSN
+  1161797525), 0fca:8031 = intermediate/bootloader stage, 0fca:8032 = Android.
+- Recovery sequence (after ~15 min bricked):
+  1. Power+Mute 30s -> fastboot 0fca:8030 (device came up on BACKUP bootchain,
+     getvar bootchain returned "new")
+  2. fastboot getvar product -> MSM8994 (noted)
+  3. fastboot flash aboot /home/stanw47/priv-research/fw/img/emmc_appsboot.mbn
+     (STOCK, md5 b714780f316ecbb6620e324801f8c8fd) -> OKAY (0.057s)
+  4. fastboot reboot -> USB went 8030 -> 8031 (t+10-30s) -> 8032 (t+40s, Android)
+- IMPORTANT: backup bootchain exists and CAN be entered with Power+Mute - a
+  viable recovery path, but DO NOT brick again. DO NOT touch aboot/SBL1 again
+  unless device is verified EDL-recoverable first.
+
+================================================================================
+9. TOKEN / DAEMON DETAILS (bb_tokenserviced RE)
+================================================================================
+- Daemon serves /dev/socket/tokenservice; uid 519 token_service.
+- Protocol (DataOutputStream, big-endian):
+  0x01 GET(name):      writeInt(len)+name, read payload         (handler 0x3e60)
+  0x02 WRITE(token):   writeInt(size)+token, read 1 byte resp   (handler 0x3f7c)
+  0x03 ERASE_ALL:      writeInt(0), read                        (handler 0x4c84)
+  Exactly 3 commands; default -> "unknown command: %c", close fd.
+- Write handler 0x3f7c-0x4c00: max token size 0x876 (2166).
+  Parse 0x58e4: {4B field0, 4B PIN, 40B BSN, 6B expiry, str1 NUL, str2 NUL,
+  sig tail}; requires size>0x38, str1 len<=0x40, str2 len<=0x400, sig<=0x400.
+  NO signature verification, NO PIN/BSN checks in the daemon.
+  Expiry check 0x545c: "000000"=never; else YYMMDD with YY+100 vs current
+  date (0x5c64). "991231" -> 199 > 117 -> valid.
+  State parse 0x53e4: str2 sets out[0x476]; "development" is what aboot gate wants.
+- Token names whitelisted: hlos_unsigned.tkn, hlos_signature.tkn,
+  sw_rollback.tkn, ddt.tkn.
+- token_mfi.bin (96 B, correct for this plan):
+  {0x00000000, PIN 0x2c3d3fe1, BSN "1161797525"+NULs, "991231",
+   "hlos_unsigned.tkn", 'state="development"', "AAAA"}
+  => aboot would read /nvuser/hlos_unsigned.tkn state=development -> skip image
+  verification. Token CONTENT is not the problem; the WRITE permission is.
+
+STARTUP/EXPIRY SCANNER + AUTO-REBOOT (deeper RE):
+- Scanner fcn.000034dc walks /nvram/nvuser (NOT blog); per *.tkn entry:
+  fcn.00005658 parse+validate (on fail: skip, no delete - garbage .tkn inert);
+  fcn.00005ca4 expiry check; if EXPIRED -> unlink token + unlink "<path>/.sig."
+  sidecar, rescan until clean.
+- POLICY BYTE at parsed-token offset 0x476 -> fcn.00006adc {0->0,1->1,else->2};
+  folded into data+0xb4 (2 beats 1). Signed token payload carries its own
+  invalidation policy.
+- AUTO-REBOOT thread fcn.00006918: if data+0xb4 != 0 -> sleep(15) ->
+  property_set("sys.powerctl",...): status 1 -> "reboot,oem-0x82";
+  status >=2 -> "shutdown,token_service"; status 0 -> no action.
+- oem-0x82 TESTED: normal reboot only (USB 8032->8031->8032), ro.bootmode stays
+  "unknown", NO EDL. Hypothesis FALSIFIED: oem-0x82 is inert reset label.
+- Internal event queue (delete notifications): fcn.000064c8 malloc 0xd0 node,
+  magic ABBAABBA, seq counter, timestamp; magic DEADBEEF = freed-node poison
+  (UAF/double-free guard).
+- Two stores: dispatcher GET/WRITE -> /nvram/blog; scanner/lifecycle ->
+  /nvram/nvuser. One daemon, two mounts.
+- Restoring a raw image with an expired .tkn in nvuser => reboot/shutdown loops
+  15s after every boot (policy byte from SIGNED token, can't forge without key).
+
+================================================================================
+10. KGSL EXPLOIT WORK + NEMOTRON CORRECTIONS
+================================================================================
+DEVICE INFO:
+- /dev/kgsl-3d0: world-writable (crw-rw-rw- system system) - PRIMARY vector.
+- KGSL = OLDER SHAREDMEM-based driver (NO drawobj/syncobj symbols).
+  => CVE-2017-1327/1328 (drawobj/syncobj races) DO NOT APPLY.
+
+CRITICAL CORRECTIONS (nemotron had TWO FATAL ERRORS, now fixed):
+ERROR 1 - WRONG KERNEL SYMBOL ADDRESSES:
+  Wrong:   commit_creds=0xffffffc000187b8c, prepare_kernel_cred=0xffffffc00019f450
+  Correct: commit_creds=0xffffffc00024a840, prepare_kernel_cred=0xffffffc00024ab74
+  Method: parsed kernel kallsyms (token table 0x10c3600, token index 0x10c3a00,
+  names 0xf7ee00, addresses 0xeb1900, num_syms=105066). Verified _text, panic,
+  printk, sys_call_table. commit_creds does cred refcount (ldxr/stxr);
+  prepare_kernel_cred allocates cred (size 0xd0) + copies init_cred.
+  Kernel VA = file_offset + 0xffffffc000080000 (NOT +0x...00000000).
+ERROR 2 - WRONG KGSL IOCTL NUMBERS:
+  Correct (from /vendor/lib64/libgsl.so): magic=0x09
+    KGSL_IOCTL_DEVICE_GETPROPERTY   = 0xc0180902 (nr=0x02 size=0x18)
+    KGSL_IOCTL_CONTEXT_CREATE       = 0xc0080913 (nr=0x13 size=0x08)
+    KGSL_IOCTL_CONTEXT_DESTROY      = 0x40040914 (nr=0x14 size=0x04)
+    KGSL_IOCTL_SHAREDMEM_MAP_FD     = 0xc0300915 (nr=0x15 size=0x30)
+    KGSL_IOCTL_SHAREDMEM_UNMAP_ADDR = 0x40080921 (nr=0x21 size=0x08)
+    KGSL_IOCTL_SHAREDMEM_ALLOC      = 0xc0300934 (nr=0x34 size=0x30)
+    KGSL_IOCTL_SHAREDMEM_FREE       = 0xc0080935 (nr=0x35 size=0x08)
+    KGSL_IOCTL_GPUMEM_GET_INFO      = 0xc0480936 (nr=0x36 size=0x48)
+    KGSL_IOCTL_CMDSTREAM_ISSUEIBCMDS= 0xc038093d (nr=0x3d size=0x38)
+  Verified: these return EINVAL (not ENOTTY) on device => kernel recognizes them.
+  This kernel uses SHAREDMEM ioctls, NOT older MAP_USER_MEM/GPUMEM_ALLOC.
+
+KGSL IOCTL HANDLER ADDRESSES (kallsyms):
+  kgsl_ioctl (main dispatch)          = 0xffffffc00062d7e8
+  kgsl_ioctl_helper                  = 0xffffffc00062d4c0
+  kgsl_ioctl_map_user_mem (nr=0x15)  = 0xffffffc00062bd90
+  kgsl_ioctl_gpumem_alloc            = 0xffffffc00062c5e0
+  kgsl_ioctl_gpumem_alloc_id         = 0xffffffc00062c778
+  kgsl_ioctl_gpumem_free_id          = 0xffffffc000628188
+  kgsl_ioctl_gpumem_get_info         = 0xffffffc000628860
+  kgsl_ioctl_sharedmem_free          = 0xffffffc000628110
+  kgsl_sharedmem_find_region         = 0xffffffc000625c3c
+  kgsl_sharedmem_set                 = 0xffffffc000633744
+  kgsl_sharedmem_readl               = 0xffffffc000633afc
+  kgsl_sharedmem_writel              = 0xffffffc000633ba8
+  kgsl_sharedmem_free                = 0xffffffc000633db4
+
+STRUCT kgsl_map_user_mem (nr=0x15, size=0x30):
+  +0x00 int fd; +0x08 ulong gpuaddr; +0x10 ulong len; +0x18 ulong offset;
+  +0x20 ulong hostptr; +0x28 uint memtype; +0x2c uint flags.
+
+CONFIRMED WORKING ON DEVICE (runtime):
+  SHAREDMEM_ALLOC (0xc0300934): ret=0, id=0xc000000000001
+    struct { uint64 id, flags, size, mmapsize, pad[2] } (48B); flags=0x40 USE_CPU_MAP.
+  GPUMEM_GET_INFO (0xc0480936): ret=0, gpuaddr=0x1000 size=0x2000
+    struct { uint64 gpuaddr, id, flags, size, mmapsize, useraddr, pad[3] } (72B).
+  SHAREDMEM_FREE (0xc0080935): pass 64-bit id from ALLOC -> ret=0 SUCCESS.
+  mmap(fd, offset=gpuaddr) works, read/write OK. Full cycle verified.
+
+VULNERABILITY SCAN (runtime):
+  - Double-free: PROTECTED (2nd free -> EINVAL)
+  - mmap-after-free: PROTECTED (refcount via vm_ops)
+  - MAP_FD (nr=0x15): only accepts DMA-BUF fds. Regular fds -> EPERM. Shell
+    cannot create DMA-BUF (needs /dev/ion O_RDWR, system-only) => unreachable.
+  => Simple UAFs (CVE-2017-1327/1328) PATCHED in this Mar-2018 build.
+
+KGSL CVE HUNT (target: world-writable /dev/kgsl-3d0):
+  - CVE-2017-15829 (CR#2097917, race free/freememontimestamp -> UAF): FIX PRESENT
+    (string "Cannot set pending bit" + pending_free mechanism found).
+  - CVE-2017-15820 (CR#2093377, "KGSL ioctl handler UAF"): CANDIDATE, patch
+    status UNCONFIRMED (couldn't locate fix commit).
+  - CVE-2020-11239 (kgsl UAF): requires 4.14+ ION ABI => N/A to SHAREDMEM 3.10.
+  - CVE-2017-0564 (ION driver, Dec 2017): unchecked.
+  - LineageOS nextbit (Robin, msm8992) CAF history partial-cloned; relevant kgsl
+    security commits listed (alloc/free race, context create/destroy race,
+    syncsource_destroy race, vma locks). Feb-2018 CVE fixes NOT in nextbit mirror.
+  - Running 3.10.84 has SOME post-Oct-2017 fixes -> window narrower than assumed.
+
+================================================================================
+11. DIRTYCOW + DOWNGRADE (attempted -> DEAD)
+================================================================================
+DIRTYCOW (CVE-2016-5195) TEST ON AAW068 - RESULT: BLOCKED
+  - Built nostdlib raw-syscall aarch64 PoC (clang --target=aarch64-linux-gnu +
+    binutils-aarch64-linux-gnu, -static -e _start). Toolchain recipe proven.
+  - /proc/self/mem write: EPERM even to writable anon pages => fd/mm-level block
+    in kernel mem_rw (not page-level; no avc denial).
+  - ptrace(PTRACE_ATTACH, self): EPERM => grsec harden-ptrace / BB hardening.
+  - => Both DirtyCOW vectors (mem-write + ptrace POKEDATA) BLOCKED on AAW068.
+  - DirtyCOW only viable on pre-grsec builds (AAF153, June 2016) - but those
+    kernels do NOT boot this unit (below).
+
+TOOLCHAIN RECIPE (raw aarch64, no libc):
+  apt-get download binutils-aarch64-linux-gnu; dpkg-deb -x
+  clang --target=aarch64-linux-gnu -O2 -fno-stack-protector -fno-pic
+        -fno-pie -nostdlib -c src.c -o src.o
+  LD_LIBRARY_PATH=<extract>/usr/lib/x86_64-linux-gnu \
+    <extract>/usr/bin/aarch64-linux-gnu-ld -static -e _start -o out src.o
+  (also works: clang --target=aarch64-linux-gnu -fuse-ld=lld -nostdlib -static)
+
+DIRTYCOW PAYLOADS (built, UNTESTED - no vulnerable kernel):
+  - dirtycow (aarch64 static, 3696B): clone(CLONE_VM|THREAD) two threads,
+    madvise(MADV_DONTNEED) vs lseek+write(/proc/self/mem). Usage: <target> <payload>.
+  - runas_payload (aarch64 static, 2312B): setgid(0)+setuid(0)+execve(/system/bin/sh),
+    intended to overwrite /system/bin/run-as (SUID) via COW race.
+
+DOWNGRADE RESULT - DEAD END:
+  - hlos-sig-tag EMPTY on STV100-1 (na/common) => no anti-rollback gate.
+  - Downloaded bbry_qc8992_autoloader_user-na-tmo-AAF153.zip (1.94GB, HalabTech
+    493660) per SaintPepsi "variant-specific pre-grsec" lead.
+  - md5 comparison vs user-common-AAF153: boot/aboot/system/NON-HLOS/recovery/
+    sbl1/tz/rpm/cache/userdata ALL IDENTICAL; only oem.img differs (149 vs 209MB
+    = carrier apps). "na-tmo" == "common" at kernel level.
+  - Full na-tmo AAF153 flash (16 partitions OKAY) => boot-loop -> fastboot t~6s.
+  - CONFIRMED: AAF153 kernel (May 2016) does NOT boot this unit (hw rev/driver
+    mismatch) regardless of variant. Hybrid (AAW068 boot + AAF153 system) boots,
+    so it is specifically the OLD KERNEL that fails.
+  - => DirtyCOW downgrade (pre-grsec kernel) DEAD. Restored AAW068 (full), boots.
+
+SAINTPEPSI PARALLEL RESEARCH (github.com/SaintPepsi/claude-on-blackberry):
+  - NO ANTI-ROLLBACK ENFORCEMENT: AAD250(Jan16)/AAE570(mid16) flashed with zero
+    errors, all 16 partitions. Bootloader did NOT reject.
+  - BOOT-LOOP WAS VARIANT MISMATCH, not version gate: "common" autoloaders
+    boot-loop on STV100-3("apac"); variant-specific autoloader boots fine.
+  - Priv is flash-resilient (survives full flashes, recovers to fastboot).
+  - EDL entry: short eMMC CMD line to GND during boot (prevents flash init, PBL
+    falls back to EDL/9008).
+  - 68 exploit PoC tools in repo; 16 vectors runtime-confirmed dead (matches ours).
+
+================================================================================
+12. POST-2017 CVE + APP-BASED ESCALATION (evaluated)
+================================================================================
+POST-OCT-2017 CVEs (Android 6.0.1 + kernel 3.10.84):
+  - CVE-2018-14634 "Mutagen Astronomy" (create_elf_tables int overflow): affects
+    3.10.x, kernel Mar 2018 predates Sept 2018 fix => UNPATCHED, BUT public
+    exploit needs a SUID binary + LD_LIBRARY_PATH (Android has no SUID).
+  - CVE-2019-2215 "Bad Binder": requires 3.18+ binder => NOT applicable.
+  - CVE-2020-0041: 3.18+ => NOT applicable.
+  - CVE-2020-11239 (kgsl UAF): 4.14+ => NOT applicable.
+  - Dirty Pipe / eBPF / netlink: 4.4/5.x+ => NOT applicable.
+  => No clean public post-2017 kernel exploit for 3.10.84.
+
+APP-BASED PRIVESC (binder service map of BlackBerry surface):
+  - TokenService (binder #112): tx1 getTokenPayload, tx2 isTokenPresent (GET_TOKENS);
+    tx3 writeToken, tx4 eraseDebugTokens (WRITE_TOKENS).
+    Shell HAS GET_TOKENS (isTokenPresent returns 0 for all = none present).
+    WRITE_TOKENS held ONLY by: android (system_server) + com.blackberry.tokenloader.
+  - trust_zone (ITrustZoneService, binder #71): signWithBsisPrivKey([B,[B]) =
+    BSIS manufacturing-key signing primitive (native TZ call). Gated by
+    com.blackberry.permission.ACCESS_TRUST_ZONE_SERVICE.
+  - com.blackberry.ddt.checkin HAS ACCESS_TRUST_ZONE_SERVICE (granted=true).
+    SecurityUtils.signSHA512() calls signWithBsisPrivKey -> BSIS SIGNING ORACLE
+    (signs SHA512(device_info + server challenge)).
+  - CheckinDevModeReceiver (exported, action=com.blackberry.intent.CHECKIN_DEV_MODE)
+    sets check-in testServerURL + checkinDump, gated by isDebugBuild()
+    (ro.build.type="user" => false). Trigger via `am broadcast` = no-op.
+  - IDiagnosticService (binder #1): all "Permission denied" for shell.
+  - dumpsys diagnostics leaks diagnostics.key/ramdump filenames.
+  => BSIS oracle is the most interesting app lead, but signs device_info+challenge
+     (limited), and the unsigned dev token needs NO signature anyway.
+
+================================================================================
+13. COMPLETE BLOCKER SUMMARY (every token-write path gated)
+================================================================================
+  1. STP (NVSIG/BSIS)        -> inproductionflag=false (ONE-WAY clear-only)
+  2. bbauthd USB             -> state=0; transitions are socket-API (STP)
+  3. TokenService binder     -> WRITE_TOKENS (tokenloader + system_server)
+  4. Direct /nvram/nvuser    -> SELinux vtnvfs_nvuser_file
+  5. Raw block devices       -> Permission denied (mmcblk0p28..p36, by-name)
+  6. KGSL UAFs               -> patched
+  7. tokenloader app         -> dead server
+  8. /dev/qseecom            -> SELinux tee_device (shell denied even getattr)
+
+SEPOLICY v30 GATE (confirmed by AVC denial):
+  avc: denied { write } for name="tokenservice" scontext=u:r:shell:s0
+  tcontext=u:object_r:token_service_socket:s0 tclass=sock_file
+  => socket write is SELinux-gated; native_consumer GID is DAC-only.
+
+SEPOLICY v30 PARSED (parser at priv-research/sepolicy/parse_policy.py):
+  - magic 0xf97cff8c (OLD) + "SE Linux" + version 30. Linux-4.4-era with two
+    3.10 quirks: (1) type_set trailing flags u32, (2) mls_range compact form.
+    avtab uses AOSP v30 IOCTL_OPERATIONS (AVTAB_OP=0x7700, extended node 33B).
+  - 1182 types, 87 classes, 12698 avtab nodes, 11896 allow rules.
+  - token_service_socket=type 11; sock_file=class 12; write=perm bit 3.
+  - Domains allowed token_service_socket:sock_file: system_server, mplogsvc, netd,
+    systemrdumpsvc, adbd, token_service, reset_cause, diag_proxy, init,
+    diagnosticsd, thermal-engine, pubmfgdata, rild, diagnostics.
+    Only token_service (333) and init (572) have WRITE bit. => ROOT-GATED.
+  - Permissive map EMPTY.
+
+ESCALATION VECTORS (type_transition rules):
+  - shell ->(runas_exec)-> runas  [run-as tool]
+  - shell ->(mfg_util_exec)-> mfg_util [CONFIRMED LIVE: mfgUtil = u:r:mfg_util:s0]
+  - mfg_util = TERMINAL domain. Caps: diag_device:chr_file (DAC-blocked: /dev/diag
+    is system:qcom_diag gid 3009, shell not in group), stp_server:unix_stream_socket
+    (STP not running), toolbox_exec:file.
+  - mfgUtil commands: get_BSN/JdmBSN/BTMac/WLANMac/BBPIN/IMEI/IMEI2/MEID,
+    clearInProductionFlag (one-way), battery/sim/sd/osver. NO token write.
+
+STP/bbauth CHAIN - DEAD END:
+  - stp_server commands gated by rtas_cmd_authorization_check (ECC-521 signed
+    tool tokens, dead server). NOT RUNNING, no init service.
+  - bbauthtoold (755 shell-exec): PCAuthTool USB bridge, needs PC pcauthtool +
+    signed token.
+
+CONCLUSION: SHIPPED RETAIL UNIT. Token (hlos_unsigned.tkn) write is ROOT-GATED.
+Every factory/manufacturing/token path requires signed tokens from dead BB servers.
+
+================================================================================
+14. MANUFACTURING TOOLS (STP) + DM-VERITY ARCHITECTURE
+================================================================================
+STP (Secure Test Platform) = the manufacturing interface.
+  stp_server (/system/bin/stp_server) exposes: STP_BSIS_INIT, STP_BSIS_CHALLENGE,
+  STP_NVSIG, STP_MEP, STP_ECID, STP_FLOW, STP_IDENTIFIERS, STP_DRM,
+  STP_ANTI_THEFT, STP_REFURBISH, STP_SUBVARIANT, STP_TOOL.
+  These are factory SIGNING operations (NVSIG = NVM signature). Requires factory
+  PC + private key.
+
+STP STARTUP GATE (init.factory.sfi.rc):
+  on boot: setprop ro.start_stp ${ro.boot.inproductionflag}
+  on property:ro.start_stp=true: class_start stp
+  => STP only runs when ro.boot.inproductionflag = TRUE (false on shipped unit).
+  => flag is ONE-WAY: mfgUtil only has --clearInProductionFlag (true->false).
+  => setprop ro.start_stp true = IMMUTABLE (ro. property).
+
+vtnvfsd (mounts /nvram/nvuser, the token location):
+  vtnvfsd -g mfg_stp -b /dev/block/bootdevice/by-name \
+    -s nvuser:/nvram/nvuser:rw -s perm:/nvram/perm:rw ...
+  - recognizes ".*\.tkn$" (token files); writes raw nvuser (pwrite/blk_writev_data).
+  - /nvram/nvuser fuse: user_id=2900 group_id=2900, SELinux vtnvfs_nvuser_file.
+  - /dev/block/bootdevice/by-name/nvuser: Permission denied (shell).
+
+TOKEN WRITE PATHS (all gated):
+  1. TokenService binder (WRITE_TOKENS) -> bb_tokenserviced -> /nvram/{perm,nvuser}
+  2. STP manufacturing (NVSIG/BSIS) -> gated by inproductionflag=false (one-way)
+  3. Direct /nvram/nvuser (fuse) -> SELinux blocked (shell)
+  4. Direct nvuser block device -> Permission denied
+  5. bbauthd USB channel -> RTAS auth (state machine)
+
+DM-VERITY MAP (fstab.bbry.sfi from boot.img ramdisk):
+  - /system: verify,signature=/system_signature  => dm-verity VERIFIED
+  - /oem:    verify,verity_key=/addon_verity_key  => dm-verity VERIFIED
+  - userdata: forceencrypt=/dev/block/.../metadata (NOT verify-flagged)
+  - init.oem.rc: creates /nvram/{blog,perm,nvuser,prdid,boardid} 0770 root root
+  - => modified content CANNOT be flashed anywhere interesting: boot/recovery =
+    aboot delegate cert; system+oem = dm-verity; modem = QC sig. Only
+    cache/userdata/misc/frp are free. Bootloader partitions accept only signed
+    images.
+  - "sneak root app into a non-checked partition" = NO for /system and /oem.
+    /data is a free injection point but cannot yield kernel root on SELinux
+    enforcing stock Android 6.
+
+ROOT DAEMONS + MODULE LOAD (init.oem.rc / init.factory.sfi.rc, all in RAMDISK):
+  - insmod -f 3 /fipsm.ko (FIPS crypto module, early-init)
+  - diagnosticsd, reset_cause, bkup_bc_update, sys_ramdump_svc, mfgbattmon,
+    mfg_battery, mfg_customization, mfg_dc, mfg_memory - all user root.
+  - on property:ro.boot.console_en=1 start console; ro.boot.debug_extra=1 ->
+    write /proc/sys/fs/suid_dumpable 2.
+  - ro.boot.* props come from kernel cmdline (boot image) => ECDSA-gated.
+  => Every privilege-bearing runtime element (root daemons, insmod fipsm.ko,
+     verity root-of-trust keys, boot cmdline props) is inside boot.img ramdisk,
+     and verity protects /system + /oem. ALL routes funnel into the single ECDSA
+     boot-image gate.
+
+BOOT CMDLINE (full, from ramdisk):
+  androidboot.hardware=qcom user_debug=31 msm_rtb.filter=0x37 ehci-hcd.park=3
+  lpm_levels.sleep_disabled=1 boot_cpus=0-5 androidboot.imagetype=sfi
+  build_number=AAW068 androidboot.build_number=AAW068 coherent_pool=1280K
+  (NO androidboot.verifiedbootstate / dm.verity= - verity driven by fstab flag.)
+
+SIDE DETAILS:
+  - oem.img 207MB (/oem, verity'd). system.img uses a NON-STANDARD proprietary
+    sparse variant (AOSP simg2img fails: csize=1,lsize=4108 => header differs).
+  - DTEK warning = FALSE POSITIVE: ro.boot.verifiedbootstate EMPTY +
+    ro.boot.flash.locked EMPTY (BB aboot never sets standard Android boot-state
+    props) => DTEK flags boot integrity as unknown.
+
+================================================================================
+15. EDL / FIREHOSE / BOOTLOADER / eMMC INVESTIGATION
+================================================================================
+EDL / FIREHOSE HUNT:
+  - Firehose programmers for msm8992 found (OneLabsTools repo):
+    * prog_emmc_firehose_8992_ddr.mbn (SecTools test key, DEBUG)
+    * prog_emmc_firehose_8992_lite.mbn (LGE attestation, DEBUG)
+    * 8992.mbn (Lenovo test key, DEBUG) [priv-research/firehose/]
+    All DEBUG/test-signed. Priv PBL (BB-fused) likely rejects them (UNTESTED -
+    needs EDL entry first). MSM8994.mbn / MSM8994_2.mbn also present.
+  - EDL tool present: priv-research/edl/edl/ (bkerler/edl).
+    Commands: printgpt, r <part>, w <part>, rs/ws, peek/poke, --loader.
+
+EDL ENTRY attempts (all FAILED):
+  - Vol-Up+Vol-Down + plug USB (from off) -> charge-only (0fca:803a)
+  - Vol-Down + plug USB -> fastboot (bootloader menu)
+  - Vol-Up -> recovery
+  - Mute+Power (30s) -> "BOOT MODE" fastboot (0fca:8030), authboot STILL gated
+  - fastboot oem edl/reboot-edl/dload/sahara = "unknown command"
+  - fastboot reboot emergency/reboot-edl = unsupported
+  - "Boot Mode" flash nvuser/devinfo = "authboot flash permission denied"
+  - adb reboot edl: NOT honored -> transient 0fca:8031 (~19s) then Android 8032.
+    NEVER reaches 05c6:9008. (CVE-2017-13174 patched.)
+
+ABOOT RE (emmc_appsboot.mbn, 32-bit ARM ELF @0xf900000):
+  - dload strings present but DEAD ("HALT: reboot into dload mode...",
+    "set_download_mode not supported", "spinning forever") - dprintf compiled out.
+  - dload cookie values (0x322A4F99/0xC67E4350/0x77777777) ABSENT ->
+    set_download_mode() COMPILED OUT. BB removed the software EDL trigger.
+  - => EDL entry is HARDWARE-ONLY (test points / short eMMC CMD to GND).
+
+EDL VIA CORRUPTING BOTH BOOTCHAINS (community claim) - VALIDATED MECHANISM:
+  - SBL1 (sbl1_signed.mbn, base 0xFEC04000, size 0x7BD28, magic 0x844bdcd1)
+    contains: "backup_bootchain", "primary_bc_ver", "usb: going for EDL",
+    "dload mode, skip rpm", "boot_dload.c", "APPSBL Image Loaded", "Jump to LK".
+  - SBL1 tries primary aboot, falls back to backup aboot; ONLY when BOTH invalid
+    does it hit EDL/dload. Matches real-world observation (backup bootchain
+    recovered device after aboot brick).
+  - RISK: corrupting BOTH bootchains destroys the sole fastboot recovery path.
+    If EDL proves unusable => PERMANENT HARD BRICK. DO NOT DO THIS.
+
+NON-DESTRUCTIVE EDL TRIGGER (SaintPepsi/claude-on-blackberry#7):
+  1. Short eMMC CMD to GND during boot -> flash init fails -> PBL falls to EDL.
+  2. Short JTAG-sense points -> pbl_sense_jtag_test_points_edl().
+  => USE TEST POINTS, NOT BOOTCHAIN CORRUPTION. Keep recovery path intact.
+
+FIREHOSE PROGRAMMER - THE REAL GATE:
+  - EDL (Sahara/Firehose) requires a firehose programmer SIGNED with the RSA key
+    burned in SoC fuses. Priv = BlackBerry key.
+  - Public MSM8992 programmers are OEM-signed for OTHER vendors (LG G4, Lenovo,
+    Xiaomi) - will NOT authenticate vs BB fuses.
+  - No PUBLIC BlackBerry-signed 8992 programmer seen. Acquisition targets:
+    autoloader packages all Priv variants, eMMC dump recovery partitions,
+    Cellebrite/XRY/Oxygen forensics DBs, BB service-center toolkits.
+  - If BB-signed programmer obtained => EDL raw eMMC dump + peek/poke arbitrary
+    R/W + partition write = full unlock path.
+
+eMMC WRITE-PROTECT / ISP RESEARCH:
+  - ISP hardware boxes (UFI Box, Easy JTAG/Z3X, Medusa Pro, Octoplus) connect to
+    eMMC test points ON-BOARD, bypass controller, read/write raw NAND. No desolder.
+  - Vendor CMD56: Toshiba eMMC vendor cmds; oscardagrach/toshiba_emmc_vendor_cmd_fuzzer.
+    Priv eMMC IS Toshiba 032GE4, manfid 0x11. Needs root (ioctl) or firehose.
+  - devinfo(is_unlocked) is permanently WP'd, but token lives in nvuser
+    (hlos_unsigned.tkn) which is NOT WP'd (token service writes it in mfg).
+    nvuser is only SELinux-gated.
+
+================================================================================
+16. DEEP FAMILY-WIDE RESEARCH (multi-agent, web) - KEY FINDINGS
+================================================================================
+[A] balika/BBAndroids PUBLIC toolchain (only working unlock):
+  - github.com/BBAndroids/imggen (GPL-2.0): boot_gpt_insecure.bin vs
+    boot_gpt_secure.bin, stage1/2/3.mbn, sbl1.mbn, aboot.mbn, bbss.mbn,
+    prdid.img, boardid.img. The insecure GPL variant + prototype bootloader =
+    unlock keystone.
+  - github.com/BBAndroids/passport_stage3 = "Passport secure boot exploit".
+  - Mechanism (Reddit + CrackBerry 1197917): desolder eMMC -> edit phyboot0/HWI
+    to set "bbss.insecure=true" -> write new boot0/boot1 via imggen -> boot =
+    UNLOCKED prototype bootloader -> fastboot flash recovery + adb sideload
+    LineageOS 18.1 (Android 11).
+  - Priv unlock verified ONCE (guizmox donor) via this hardware route.
+
+[B] CVE-2021-1961 = the ONE remaining software root candidate. QSEE/Widevine TA
+  heap overflow via qseecom -> TrustZone physical-memory R/W. Bypasses GRSEC/
+  ASLR/CFI/DEBUG_LIST. Priv last patch 2017 (< Sep-2021 fix). GATE: does shell
+  have /dev/qseecom? PoC github.com/tamirzb/CVE-2021-1961. -> VERDICT: DEAD from
+  shell (see section 17).
+
+[C] BlackBerry-signed firehose EXIST publicly for OTHER chips (NOT Priv/MSM8992):
+  - github.com/bkerler/Loaders blackberry/: 009470e1..._fhprg.bin (SDM660/Key2),
+    009720e1..._fhprg_peek.bin (MSM8953/KeyOne/Motion).
+  - None for MSM8992. Only public MSM8992.mbn is HUAWEI-signed (rejected by BB PBL).
+
+[D] Key2 (SDM660) UNLOCKED+ROOTED 2025-26 via CVE-2021-1931 ("kibo",
+  github.com/BotchedRPR/kibo) -> LineageOS 22.2. SDM660-specific, NOT MSM8992.
+
+[E] No software root ever released for Priv (XDA $1000 bounty unclaimed ~8y).
+  GRSEC+PAX slab isolation blocks Binder UAF/CVE-2021-8910/IGMP sprays; DirtyCOW
+  blocked; all 4 QuadRooter patched. Lasimeri ~95% GPU-DMA rootchain but no
+  kernel write primitive on MSM8992.
+
+[F] aboot/debug: authboot fastboot fork; ECC-512 "ec_agent" signed blobs; cookie
+  byte 'A'=venice(8992),'S'=bbb100(8953); tokens APBI(prod)/ADBI(debug)/ABBI/MFI;
+  delegate-cert in bootsig/recoverysig; token server stmtokenservice.rim.net DEAD.
+
+[G] Official GPL kernel: github.com/blackberry/android-linux-kernel branch
+  msm8992/AAO474; BBAndroids/lk (LK/aboot fork source) - public for study.
+
+[H] Priv eMMC GLUED to board (anti-rework). eMMC Samsung KLMCG8GEND-B031 family.
+  Rowhammer=Drammer (LG G4 MSM8992 1/1 vulnerable) gives Android root only.
+
+[I] Commercial: ChimeraTool says Priv NOT supported. No Octoplus/Medusa/DC-Unlocker.
+
+LASIMERI/BBPriv-vibe-root (other researcher, STV100-2 AAO474 vzw):
+  - 95% GPU-DMA root chain: KGSL SMMU stale-TLB write-after-free 0-day (~85%
+    reliable), GPU snapshot TTBR0 leak, ION CMA alloc w/ known PA layout.
+    Blocked on: SMMU register bank not reachable from GPU DMA.
+  - ION debugfs PA leak CONFIRMED LIVE on OUR device.
+  - Internal BB tooling leaked in AAO.zip: authboot (RTAS fastboot ext w/
+    "flash debug_token", "debugtokens", "getvarp"), pcauthtool, aveflash.lua.
+  - On-device qseecom test clients ALL MISSING; mfgUtil PRESENT (root:shell 22480B).
+
+================================================================================
+17. LIVE ON-DEVICE VERIFICATION: /dev/qseecom gate (CVE-2021-1961)
+================================================================================
+Device connected via adb: serial 1161797525, STV100-1 (venicena), Android booted.
+Gating rule (ueventd.qcom.rc): /dev/qseecom 0660 system drmrpc
+  label u:object_r:tee_device:s0
+
+LIVE PROBE (adb shell, uid 2000 / u:r:shell:s0, SELinux Enforcing):
+  - id: groups include devicepwd(2908), token_service_native_consumer(2915),
+    mfg_client(2995) -- DOES NOT include drmrpc or system.
+  - ls -laZ /dev/qseecom, stat, dd, /sys/class/misc/qseecom -> Permission denied.
+
+VERDICT on CVE-2021-1961 from shell:
+  qseecom open requires uid=system(1000) OR group=drmrpc (DAC 0660) AND a domain
+  permitted on tee_device (SELinux). shell fails BOTH.
+  => CVE-2021-1961 is NOT a usable foot-in-the-door from unrooted state; only
+     works AFTER obtaining privileged (system/drmrpc + tee_device) context, i.e.
+     after root (PoC author requires "su - system"). CIRCULAR - dead from stock.
+
+================================================================================
+18. TRUSTZONE / WIDEVINE TRUSTLET RE (CVE-2015-6639 class)
+================================================================================
+TRUSTLET EXTRACTION:
+  - Un-sparsed AAW068 system.img -> system.raw (3.69GB). Sparse format: header
+    28B (magic 0xed26ff3a + image_checksum), chunk 12B, types 0xCAC1 raw /
+    0xCAC2 fill / 0xCAC3 dontcare / 0xCAC4 crc.
+  - Extracted /system/etc/firmware/widevine.{mdt,b00,b01,b02,b03} (b02=181528B).
+  - widevine.mdt = SIGNING CERT: "BB Attestation CA (secure)", "BBOS-Bootloader@
+    blackberry.com", OU=02 009690E100000000 HW_ID (msm8992), OU=03 ...DEBUG,
+    OU=07 0001 SHA256. => trustlet BB-signed AND DEBUG-flagged (unusual).
+
+ARCHITECTURE (widevine.b02, 181528B, THUMB-2 not ARM!):
+  - rizin (-a arm -b 16) = clean analysis. 406 functions. PIC style (add rX,pc,rY
+    + movw/movt). R9/sb = data-segment base register (QSEE convention).
+  - TWO command families behind single entry dispatcher:
+    * 5X family: cmd_ids 0x50001-0x50009 (9 cases). Dispatcher @0x70cc; jump
+      table @0x7114. Max req 0x2b15, rsp 0x108. DRM PROVISIONING handlers:
+      drm_save_keys (@0x8e64), drm_verify_keys, drm_prov_finalize, etc.
+    * 6X family: cmd_ids 0x61001-0x6102F (47 cmds). Dispatcher @0x8664: bounds
+      check (cmd-0x61001 < 0x30) -> "cmd_id %d >= %d"; table @ sb+0x7c (static
+      part in widevine.b03 @0x7c), 12-byte entries {u32 cmd_id, u32 handler_fn,
+      u16 max_req, u16 max_rsp}; PIC handler pointers patched at load.
+  - FULL 6X OEMCrypto COMMAND MAP (partial): OpenSession/CloseSession/
+    GenerateDerivedKeys/GenerateNonce/GenerateSignature/LoadKeys_V8/SelectKey/
+    RefreshKeys/DecryptCTR/RewrapDeviceRSAKey/Dash_InstallKeybox/Dash_IsKeyboxValid/
+    GetKeyData/GetRandom/Dash_InstallEncapKeybox/LoadDeviceRSAKey/
+    DeriveKeysFromSessionKey (+~30 more in cmd_names.json).
+  - API = OEMCRYPTO v1.x/2.x ERA (LoadKeys_V8, RewrapDeviceRSAKey,
+    Dash_InstallEncapKeybox) = circa 2014-2015 code. Pre-dates Jan-2016 fixes.
+    Supports "BB re-signed an OLD trustlet" hypothesis.
+
+CVE-2015-6639 STATUS (Beniamini, Pwnie 2016 winner):
+  - His bug: PRDiagVerifyProvisioning unbounded memcpy into global buffer, length
+    from attacker DWORD; overflow @0x10FC, session ptrs @0x169C.
+  - OUR trustlet: NO PRDiag strings, no 0x1000xxxx diagnostic commands. Our 5X
+    family = provisioning, different interface. => CVE-2015-6639 NOT present as-is.
+  - BUT our build is OLDER generation; same-class bugs audited (below).
+
+HANDLER AUDIT - RewrapDeviceRSAKey LENGTH UNDERFLOW BUG FOUND (cmd 0x0A):
+  Worker fcn.000180a2:
+    validate inputs (len_in <= 0xa000, nonce sl==0x20) -> cipher init -> decrypt
+    blob -> check decrypted hdr u16==0x20 x2 + memcmp 0x20 -> malloc(r5) ->
+    copy/decrypt -> PKCS5 strip fcn.000111ea updates len.
+    THE BUG:
+      0x18332 ldr r0,[var_ech]; cmp 0x10000; blo ok   ; only bounds check
+      0x18358 ldr r1,[r4]; cmp "SIGN"(0x4e474953); beq 0x1836a
+      0x18366 (no SIGN) r3=r4
+      0x1836a (SIGN)    r3=r4+8; subs r0,8; str [var_ech]  ; NO underflow chk
+      0x18376 ldr r0,[var_ech]; uxth r1,r0               ; u16 truncate
+      0x1837e bl fcn.00001716 (secpkcs8_parse(r3,(u16)len,&ctx))
+    Trigger: post-strip len in [1..7] AND buffer starts "SIGN" -> len-8 wraps
+    0xFFFFFFF9..FE -> uxth -> 0xFFF9..FFFE (65529-65534) -> secpkcs8_parse
+    DER-walks up to ~64KB past a <=7-byte heap chunk.
+    => HEAP OOB READ primitive inside trustlet. Attacker plaintext control: FULL
+    (CTR mode symmetric; cmd 0x09 DecryptCTR on same session encrypts chosen
+    plaintext = free oracle). OOB bytes can be embedded in returned RSA key
+    material => TEE heap info-leak (session keys/keybox-adjacent).
+
+  Other handlers:
+    LoadKeys_V8 (cmd 0x06) @0x168a0: CLEAN (num_keys <= 200, per-key len checks).
+    Dash_InstallKeybox (cmd 0x0B) @~0xbcac: CLEAN (keyBoxLength==0x80).
+    drm_save_keys fcn.00008e64: HARDENED (msg_len <= 0x2800, six len checks <0x100).
+    drm_prov_finalize fcn.00009d84: no attacker-controlled buffers.
+
+secpkcs8_parse internals (fcn.00001716):
+  - fcn.00002416 top SEQUENCE walker; BER short/long-form; NO bound vs original.
+  - fcn.000024fe generic TLV reader; bounds ONLY vs ctx->remaining (u16); post-
+    underflow window is poisoned => useless.
+  - Key-object layout @0x17f8-0x1890: {u16 nLen, ptr->modulus, u16 eLen,
+    ptr->exponent, ...}. Per-element cap cmp 0x200 (each TLV <=512B).
+  - Parsed {ptr,len} pairs (pointing INTO OOB heap) drive later copies into the
+    client-visible rewrapped blob => OOB heap bytes RETURNED to caller.
+
+FINAL PRIMITIVE: trustlet heap info-leak, up to ~64KB reach, attacker-steered via
+  DER headers at known offsets; each leaked element <= 0x200 B; delivered through
+  RewrapDeviceRSAKey response.
+
+DELIVERY (userspace) - liboemcrypto.so:
+  - Extracted /vendor/lib: liboemcrypto.so (75KB ARM32), libwvdrm_L1.so,
+    libwvdrmengine.so (MediaDrm plugin 1.4MB).
+  - liboemcrypto exports obfuscated _oecc01.._oecc45 (OEMCrypto API v9 surface);
+    only 2 unobfuscated: OEMCrypto_InstallEncapKeybox, OEMCrypto_InstallOEMWrappedKeybox.
+  - QSEE plumbing: QSEECom_start_app/send_cmd/shutdown_app + ION_Malloc/ION_Free;
+    tag "DrmWidevineDash".
+  - libwvdrmengine.so dlopens liboemcrypto.so at runtime (runs inside MEDIASERVER
+    on this 7.1.1 build).
+  - _oecc18 @0x4fb5 = OEMCrypto_RewrapDeviceRSAKey (str @0xe18c). Wrapper: validates
+    msg_len <= 0xa000, nonce==0x20 -> memcpy into QSEE req buf -> send_cmd ->
+    memcpy resp. => straight passthrough of attacker blob; NO userspace mitigation.
+
+FULL EXPLOIT CHAIN (mapped end-to-end):
+  app -> MediaDrm binder -> mediaserver [need code exec here]
+   -> libwvdrmengine dlopen liboemcrypto
+   -> OEMCrypto_Initialize/OpenSession/GenerateDerivedKeys(nonce)
+   -> DecryptCTR (cmd 9) as ENCRYPT oracle to craft "SIGN"||3 bytes||PKCS5 pad
+   -> RewrapDeviceRSAKey -> QSEE cmd 0x0A -> trustlet fcn.000180a2
+   -> len-8 underflow -> uxth ~65533 -> secpkcs8_parse reads ~64KB past <=7B chunk
+   -> leaked fields in HMAC'd rewrapped key returned => TEE heap info leak.
+
+PREREQ remains: code-exec in mediaserver (SELinux blocks shell/untrusted_app from
+  /dev/qseecom). Candidate mediaserver entry bugs (libstagefright/libmedia on
+  7.1.1 AAW068) = next RE target; else compat_binder/KGSL.
+  Reachable binder paths: drm.drmManager (#121, responds), MediaDrm (via
+  app_process from shell), fidocryptodaemon (#119), trust_zone (#71).
+
+================================================================================
+19. KERNEL LPE EXPLOIT DEBUGGING (SESSION 7A) - IN PROGRESS
+================================================================================
+Goal: binder UAF (CVE-2019-2215-class) to leak kernel heap pointers via pipe
+  writev, then arb-write thread_info->addr_limit -> -1, disable selinux,
+  cred overwrite -> root.
+
+EXPLOIT GEOMETRY:
+  1. open /dev/binder -> epoll_ctl(ADD) -> pipe() -> ioctl(BINDER_THREAD_EXIT)
+     -> kfree(binder_thread) at X (kmalloc-512, 296B)
+  2. Writer: writev(pipefd[1], iov, 24) -> rw_copy_check_uvector kmalloc(384) =
+     kmalloc-512 -> SHOULD reuse freed binder_thread at X -> kernel copies 24
+     iovecs to X
+  3. Writer fills pipe (65536 bytes from iov[0]), blocks in pipe_wait
+  4. Main: epoll_ctl(DEL) -> ep_remove_wait_queue -> remove_wait_queue ->
+     list_del(&pwq->wait.task_list) -> writes X+0x50 to X+0x50 and X+0x58
+     (corrupts iov[5].iov_base and iov[5].iov_len)
+  5. Main: throwaway read drains pipe -> writer wakes, copies remaining 512 bytes
+     from corrupted iov[5] (base=X+0x50, len=X+0x50)
+  6. Data from X+0x50 (kernel heap) should appear in pipe -> read it
+
+RESULT: FAILURE - writev always returns 65536 (PIPE_CAPACITY), never 66048.
+  The 512 bytes from corrupted iov[5] are never written.
+
+DIAGNOSTICS:
+  - Signals blocked in writer thread - no change
+  - Timing confirms writer DID block and wake (406ms total)
+  - FIONREAD confirms 0 bytes in pipe after throwaway read
+  - No data even after 200ms+ wait
+
+DISASSEMBLY (pipe_iov_copy_from_user @ 0xffffffc000315470):
+  Two paths:
+  - ATOMIC=1 (0x315578): __copy_from_user directly, NO addr_limit check
+  - ATOMIC=0 (0x3154d0): manual addr_limit check via ldr x3,[x25,#8] (x25 = sp &
+    ~0x3fff = thread_info). If iov_base + copy > addr_limit -> memset dest to zero,
+    return -EFAULT. ALWAYS fails for kernel addresses.
+  pipe_write retry: atomic=1 fails -> atomic=0 -> addr_limit check rejects kernel
+    address -> -EFAULT -> since ret already 65536 > 0, error swallowed -> writev
+    returns 65536.
+
+UNRESOLVED: WHY does the atomic=1 path fail?
+  __copy_from_user uses plain LDR (not LDTR), no access_ok. X+0x50 is in kernel
+  direct map; page SHOULD be mapped/readable. Possible causes:
+    (a) kmalloc(384) did NOT reuse freed binder_thread (some other allocation
+        consumed the slot between kfree and kmalloc). iov[5] still base=NULL ->
+        __copy_from_user(src,NULL,512) -> page fault -> -EFAULT.
+    (b) CONFIG_DEBUG_PAGEALLOC enabled -> freed slab page unmapped -> can't read.
+    (c) other page protection issue.
+  Most likely (a): BINDER_THREAD_EXIT kfree -> writer kmalloc(384) gap lets other
+  allocations consume the kmalloc-512 per-cpu freelist slot.
+
+NEXT STEPS:
+  1. Verify slab reuse (detect whether EPOLL_CTL_DEL actually modified kernel iovec)
+  2. Spray kmalloc-512 more aggressively before/after the free
+  3. Try alternative leak geometry (different iovec index / corruption)
+  4. Consider alternative exploit path (io_uring absent on 3.10; msg_msg compiled
+     out; consider sk_buff or other objects)
+
+================================================================================
+20. POST-2017 KERNEL EXPLOIT SURFACE (remaining)
+================================================================================
+- No clean public post-2017 kernel exploit for 3.10.84 (see section 12).
+- Lasimeri KGSL SMMU stale-TLB WAF 0-day = most promising target; needs port to
+  STV100-1 (was blocked on STV100-2 by SMMU reg bank unreachable from GPU DMA).
+  Use ION PA leak (confirmed live) + /dev/kgsl-3d0 world-writable.
+  Target commit_creds=0xffffffc00024a840, prepare_kernel_cred=0xffffffc00024ab74.
+- Widevine trustlet underflow (section 18) blocked on mediaserver code-exec.
+- Hardware: eMMC ISP / EDL test points / balika desolder+imggen (section 16).
+
+================================================================================
+21. DE-GOOGLE (soft, /data-level - COMPLETE)
+================================================================================
+- pm disable-user / pm hide BLOCKED (shell lacks CHANGE_COMPONENT_ENABLED_STATE +
+  MANAGE_USERS - BB stripped these).
+- pm uninstall --user 0 WORKS (shell has DELETE_PACKAGES). Removed all Google
+  packages for user 0 (APKs stay in /system behind dm-verity, but uninstalled-for-
+  user: don't run/appear).
+- Removed: gms, vending, gsf, gsf.login, chrome, search, gmail(+exchange), maps,
+  youtube, music, videos, photos, docs/sheets/slides, messaging, hangouts, tts,
+  wallet, feedback, backuptransport, configupdater, onetimeinitializer,
+  partnersetup, setupwizard, syncadapters, geniewidget, deskclock, IMEs.
+- gms blocked by its own device admin (MdmDeviceAdminReceiver); disabled ADM in
+  Settings -> uninstall gms = Success.
+- Kept: packageinstaller, webview, talkback.
+- Termux on Marshmallow: archive builds are 210KB bootstrap stubs (dead hosts).
+  GitHub CI termux-app_v0.119.0-beta.1+apt-android-5-github-debug_arm64-v8a.apk
+  (24MB) has embedded bootstrap, minSdk=21 -> installs+bootstraps on API 23.
+  Bundles current ca-certificates -> working TLS clients on-device.
+
+================================================================================
+22. BB10 DEVICES (Classic / Passport) - SUMMARY POINTER
+================================================================================
+The BB10/QNX devices are tracked separately. Summary (details in their own logs):
+- Passport (QNX BLACKBERRY-603C, MSM8974AA WINDERMERE EMEA) + Classic
+  (QNX BLACKBERRY-528E, MSM8960 CLASSICNA Rev:11).
+- Dev-mode SSH = KEY-based (not password). blackberry-connect (Java launcher of
+  Connect.jar) pushes your 4096 RSA public key using dev-mode password; then SSH
+  as devuser via paramiko (disable rsa-sha2-512/256).
+- Both run the GETROOT-style rooted autoloader (btool/sud/launcher_patcher
+  boot-time root). NEITHER has /q/ IMPERSONATION autoloader that BerryCore's
+  bb10-root requires. [UPDATED 2026-08-30] REAL uid-0 root ACHIEVED on the
+  Classic: added `/proc/boot/pathtrust !/base/bin/__root` to btool at line 31
+  (the autoroot root payload), so __root now yields an interactive root ksh
+  (was "Operation not permitted"). boot0/boot1 remain hardware write-protected
+  even as root (need the bb10.root.sx MMC driver patch to toggle BOOT_WP). See
+  classic-research-log.txt section 9.
+- BerryCore = normal-user userland (NO root/impersonation required to install);
+  Impersonation (/q/) is a separate optional privilege layer.
+- Classic has BerryCore at /accounts/1000/shared/misc/berrycore/; Passport does not.
+
+================================================================================
+23. FILES / TOOLS / ARTIFACTS (host)
+================================================================================
+- /home/stanw47/priv-research/            - all firmware + work (LOCAL)
+    autoloaders/{AAF153,AAF153-na-tmo,AAW068,STV100-1}/
+    balika/lineage-18.1-20250124-UNOFFICIAL-venice.zip (684MB)
+    firehose/{8992.mbn,MSM8994.mbn,MSM8994_2.mbn}
+    edl/edl/ (bkerler/edl)
+    sepolicy/{parse_policy.py,sepolicy_aaw068.bin}
+    tokenservice/{tokenloader.apk,libbbauth.so,libbb_tokenservice.so,token_*.bin}
+    trustlet/{widevine.mdt/b00-b03,wv_thumb.txt,cmd_names.json,handlers.json}
+    tmp_ud/{factory.raw,userdata.raw (10GB each),userdata_sparse.img,adb_keys,settings.db}
+    fw/img/ (boot.img,recovery.img,emmc_appsboot.mbn,kernel*.img,oem.img,
+      system.img,system.raw,NON-HLOS.bin)
+    fw/bin_bbauthd,bin_bbauthtoold,bin_bb_tokenserviced,bin_stp_server,
+      bin_mfgUtil,bin_token_client,bin_vtnvfsd,bin_pubmfgdata,bin_reset_cause
+    work/{session2-findings.md,session3-authfull-decode.md}
+- /tmp/opencode/                          - volatile session tools/artifacts
+    platform-tools/ (adb,fastboot), token_mfi.bin, aboot_patched.mbn, dirtycow
+    + runas_payload, kgsl_exploit.c, ion_exploit_final.c, kernel_decompressed.img,
+    trustlets/, delivery/ (liboemcrypto.so, libwvdrm*.so), bb_tokenserviced.asm
+- /media/stanw47/Ventoy/                  - autoloader archives + logs (FLASH)
+    STV100-1.zip, bbry_qc8992_autoloader_user-common-AAW068.zip
+    priv-research-log.txt (this file), classic-research-log.txt,
+    passport-research-log.txt
+
+KEY RESTORE FILE: /home/stanw47/priv-research/fw/img/emmc_appsboot.mbn
+  (stock aboot, md5 b714780f316ecbb6620e324801f8c8fd) - needed for recovery.
+
+================================================================================
+END OF LOG (merged master - work in progress - keep both copies in sync)
+================================================================================

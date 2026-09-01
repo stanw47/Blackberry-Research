@@ -1,0 +1,21 @@
+# Exclude large/sensitive artifacts only if they end up re-added.
+# The curated bootloaders/ and analysis/ dirs are explicitly tracked and
+# should NOT be ignored (see below negations).
+
+# Scratch / secret material:
+.env
+.venv/
+__pycache__/
+*.pyc
+
+# Never commit large proprietary dumps or full system images if they reappear:
+system.raw
+userdata.raw
+factory.raw
+userdata_sparse.img
+*.raw
+NON-HLOS.bin
+*.zip
+
+# Keep everything else explicit — do not blanket-ignore *.mbn/*.img here;
+# the curated copies under bootloaders/ and resources/ are intentional.
