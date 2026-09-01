@@ -3,7 +3,7 @@
 Security research notes, reverse-engineering artifacts, and tooling for the
 BlackBerry 10 (BB10/QNX) and BlackBerry Android-era devices.
 
-> **⚠️ DISCLAIMER — READ THIS FIRST**
+> **DISCLAIMER — READ THIS FIRST**
 >
 > This repository exists **purely as a research aid**. Nothing here is
 > production code, a supported tool, or an officially endorsed procedure.
