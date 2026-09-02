@@ -48,6 +48,22 @@ SESSION 7W - SSH CONNECTION RITUAL: KEY REQUIRED EVERY SESSION
   If step 2 fails, the phone's sshd is down; establish it (restart sshd or
   replug/push key) before step 3.
 
+[3b] KEY RE-PUSH AFTER EVERY REBOOT / DEV-MODE RE-ENABLE  (2026-09-02, verified)
+  After the phone reboots and Development Mode is toggled back on, the
+  device's authorized_keys NO LONGER contains our public key. sshd listens
+  (port 22 OPEN) but auth fails ("Authentication failed"). You MUST re-push the
+  key before paramiko will work:
+      BC=.../bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect
+      # RUN IN BACKGROUND - it is the SSH tunnel and dies on process exit:
+      nohup "$BC" 169.254.0.1 -password <DEV_PW> \
+            -sshPublicKey /home/stanw47/Documents/blackberry-research/id_rsa.pub \
+            > /tmp/opencode/bb_connect.log 2>&1 &
+      sleep 6   # wait for auth+key transfer
+      python3 connect_now.py
+  blackberry-connect auths to the device on TCP port 4455, pushes id_rsa.pub,
+  and establishes the tunnel. It is a `java -jar Connect.jar` wrapper (needs
+  Java, NOT wine). It MUST stay running for the session to persist.
+
 [4] SECURITY NOTE ON THE KEY
   `id_rsa` is a live credential granting shell access to the device. It MUST
   stay out of the git repository. If `id_rsa`/`id_rsa.pub` ever appear as
