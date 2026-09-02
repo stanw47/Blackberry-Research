@@ -214,6 +214,18 @@ half-open door stays shut.
 - [`dumps/`](dumps/) — Classic eMMC dumps + build-info parser
 - [`resources/`](resources/) — QNX MMC devctl headers
 
+## Device connection (SSH)
+
+Connecting to the Classic requires the RSA key **every session** — there is no
+password path and no session reuse. See [`notes/session7w-connect-ritual.md`](notes/session7w-connect-ritual.md)
+for the required ritual, why `Connection refused` happens, and the quick
+reference (`ping` → check port 22 listener → `python3 connect_now.py`).
+
+The private key (`id_rsa`) is a live credential and is gitignored — never
+commit it. `connect_now.py` / `reconnect.py` at the repo root document the
+paramiko settings (`server_sig_algs=False`, `disable rsa-sha2` pubkeys) needed
+to talk to QNX sshd.
+
 ## License
 
 Research notes and original scripts are provided as-is for educational

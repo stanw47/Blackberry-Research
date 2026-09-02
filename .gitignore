@@ -8,6 +8,13 @@
 __pycache__/
 *.pyc
 
+# SSH credentials / private keys - NEVER commit these (live device access):
+id_rsa
+id_rsa.pub
+*.pem
+known_hosts
+*id_*
+
 # Never commit large proprietary dumps or full system images if they reappear:
 system.raw
 userdata.raw
