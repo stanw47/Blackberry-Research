@@ -29,6 +29,16 @@ are provided as-is as a research aid.
 - `session7u-ext-struct-location.md` — (superseded hyphen attempt)
 - `session7v-eio-is-switch.md` — **correction**: EIO is from the CMD6 SWITCH,
   not a flag gate
+- `session7x-windows-connect.md` — Windows SSH connect ritual + full recipe
+- `session7y-map-device-common.md` — `MAP_DEVICE` is common among QNX drivers
+- `session8a-group-wrapper-emmc.md` — group-wrapper priv-esc unlocks `/dev/emmc`
+- `session8b-wpgrp-patch.md` — WP group-patch targeting, driver re-map
+- `session8c-writable-data-and-extcsd-loc.md` — **live eMMC driver `.data` R/W**;
+  live `ext_csd` located (BOOT_WP=0x04, clearable)
+- `session9a-live-extcsd-reread.md` — fresh boot-WP state; ranked CMD6 paths
+- `session9b-ifs-verify-cap-diff.md` — **IFS integrity verifier DISPROVEN for
+  custom IFS** (red-blink experiment); rooted cap.exe 3-byte diff; public tool
+  haul from bb10.root.sx
 - `bug-report-pathtrust-fput-leak.md` — path-trust `fput` leak analysis
 - `priv-research-log.txt` — device milestones
 

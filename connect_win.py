@@ -6,17 +6,16 @@ def _new(self, *a, **kw):
     return _orig(self, *a, **kw)
 paramiko.transport.Transport.__init__ = _new
 
-import os
-key = paramiko.RSAKey.from_private_key_file(
-    os.environ.get("BBKEY", "/home/stanw47/Documents/blackberry-research/id_rsa"))
+key = paramiko.RSAKey.from_private_key_file(r"C:\Users\STANLE~1\AppData\Local\Temp\opencode\bb10_ssh_key")
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 try:
     c.connect(hostname="169.254.0.1", port=22, username="devuser", pkey=key,
-              disabled_algorithms={'pubkeys':['rsa-sha2-512','rsa-sha2-256']}, timeout=30, auth_timeout=120, banner_timeout=30, allow_agent=False, look_for_keys=False)
+              disabled_algorithms={'pubkeys':['rsa-sha2-512','rsa-sha2-256']},
+              timeout=30, auth_timeout=120, banner_timeout=30, allow_agent=False, look_for_keys=False)
     print("SSH CONNECTED!")
     stdin,stdout,stderr = c.exec_command("echo CONNECTED; id; uname -a", timeout=10)
     print(stdout.read().decode(errors='replace'))
     c.close()
 except Exception as e:
-    print("FAILED:", e)
+    print("FAILED:", repr(e))
