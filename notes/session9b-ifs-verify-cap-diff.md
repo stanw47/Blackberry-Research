@@ -55,11 +55,12 @@ Two artifacts built from SQC100-1.Classic.BB10_3_3.10.3.3.498-patched.exe:
   Blinking is fully recoverable by re-flash (confirms: product brick-tolerant).
 
 --------------------------------------------------------------------------------
-[5] WHAT OLEKSANDR ACTUALLY CHANGED IN THE ROOTED AUTOLOADER (binary diff)
+[5] THE ROOTED AUTOLOADER'S cap.exe: 3-BYTE DIFF vs STOCK (binary diff)
 --------------------------------------------------------------------------------
 Diff'ed SQC100-1.Classic...498.exe (stock, 2283354204 B) vs ...-patched.exe
-(rooted, 2283353560 B). DataHeader/offsets differ (Sachesi rebuild) but the
-cap.exe stub differs in EXACTLY 3 bytes:
+(rooted, 2283353560 B; patched cap.exe attributed to FerreiraPablo's
+BlackberrySystemPacker/Clean-R2 lineage per public posts). DataHeader/offsets
+differ (Sachesi rebuild) but the cap.exe stub differs in EXACTLY 3 bytes:
 
   0x0000c913  84 C0 (test al,al; je +0x53)   ->  38 C0 (cmp al,al; je ALWAYS)
               => validation-call return value IGNORED; the post-validation
@@ -85,12 +86,12 @@ v0.1.0.10), mod_nvram (downgrade tool + src), asroot (src), ramloader.txt
 unlock_path_trust.zip (+ unlock_path_trust.c source - pathtrust 0x73 MsgSend to
 0x40000000 proc, flags/pid/dev/ino -> 8960 10.3.3.3216).
 
-NOTE (important): the RAW-eMMC items are/ were PRIVATE, published nowhere:
+NOTE (important): the RAW-eMMC items are PRIVATE, never published publicly:
   12 emmc firmware        /private/MAG2GA_fw.zip
   13 emmc driver patcher + fw reader  /private/sdmmc.zip
-Oleksandr refuses to share the patched SDMMC driver ("added my own handler,
-CMD0..CMD255" - DCMD_SDMMC_ANY devctl w/ sdmmc_raw_cmd struct, incl.
-FUNC_CLEAR_WP). So we must REIMPLEMENT raw-MMC ourselves (see 8c levers +
+The patched SDMMC driver (custom handler exposing CMD0..CMD255 via a
+DCMD_SDMMC_ANY devctl sdmmc_raw_cmd struct, incl. FUNC_CLEAR_WP) is therefore
+not redistributable; we must REIMPLEMENT raw-MMC ourselves (see 8c levers +
 user-space SDHCI/IOPRIV plan).
 
 --------------------------------------------------------------------------------
