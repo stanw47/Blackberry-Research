@@ -39,6 +39,11 @@ are provided as-is as a research aid.
 - `session9b-ifs-verify-cap-diff.md` — **IFS integrity verifier DISPROVEN for
   custom IFS** (red-blink experiment); rooted cap.exe 3-byte diff; public tool
   haul from bb10.root.sx
+- `session10a-passport-path-audit.md` — **Passport path audit**: `/dev/mem` is a
+  `deadbeef` canary decoy (no physical RAM window); cross-process `/proc/pid/as`
+  write = errno 312; Oleksandr `DCMD_SDMMC_ANY` / `sdmmc_raw_cmd` interface
+  decoded (`FUNC_CLEAR_WP`); why the raw-command handler must be *added* (not
+  just triggered); validity of autoloader/wipe/desolder ideas ranked
 - `bug-report-pathtrust-fput-leak.md` — path-trust `fput` leak analysis
 - `priv-research-log.txt` — device milestones
 

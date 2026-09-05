@@ -84,6 +84,9 @@ below was tried and is logged in [`notes/`](notes/).
 9. **`/proc/<pid>/as` memory patching** — established that the driver's
    `.data`/`.bss` is writable via `dd` on `/proc/as`, but `.text` is read-only
    ("Server fault on msg pass"), preventing a dispatch-table patch.
+10. **`/dev/mem` physical-RAM audit (Passport)** — ruled out: the char device
+    opens `O_RDWR` but serves a uniform `0xdeadbeef` canary at every address with
+    no data persistence. See session10a.
 
 ### Priv (Android)
 
@@ -135,11 +138,24 @@ in [`notes/`](notes/)).
    code path (`WRITE_PROTECT → mmc_switch(0xad)`), but the **raw-command
    passthrough (`VUC_CMD`) is not implemented** (`ENOTTY`) — this is exactly
    what the private `sdmmc.zip` patch adds (per the upstream author).
-6. **`/proc/<pid>/as` patching**: `.data`/`.bss` writable, `.text` read-only.
+6. **`/proc/<pid>/as` patching**: `.data`/`.bss` writable, `.text` read-only
+   ("Server fault on msg pass"). Cross-process `/proc/<pid>/as` **writes** into
+   the trusted driver return `errno 312` (self-writes succeed) — a trust-boundary
+   wall, not just a DAC/permission question.
 7. **`imggen` + `passport_stage3`** toolchains decoded (public GPL): the
    prototype bootloader, HWI/GPT generation, and the RPM/PBL debug-mode
    (`BOOT_PARTITION_SELECT = 0x5D1`) unlock path.
-8. **Priv BIDE/Pathtrust** are detection/enforcement LSMs; BIDE never blocks,
+8. **Oleksandr's raw-MMC interface decoded** (`DCMD_SDMMC_ANY` +
+   `sdmmc_raw_cmd`, 44 B, `FUNC_CLEAR_WP = 0x80004`, `cmd_idx` 0–255). It is
+   *additive*: the stock driver's dispatch table has no such slot, so it returns
+   `ENOTTY`. Re-adding the raw handler is a `.text` patch, which the above
+   trust-boundary findings block. (`DCMD_SDMMC_ANY = 0xC02C0E11` by the public
+   `_SIM_MMCSD=0x0E10` base; on-device MMC dcmds use a RIM-specific `0x1A..`
+   base — see session10a.)
+9. **`/dev/mem` on the Passport is a decoy** — opens `O_RDWR` as root yet returns
+   a uniform `0xdeadbeef` canary for *every* physical address (full-4GB scan:
+   zero ELF headers found), and writes do not persist. No physical-RAM window.
+10. **Priv BIDE/Pathtrust** are detection/enforcement LSMs; BIDE never blocks,
    Pathtrust can. Both are defensively written; no unprivileged escalation bug.
 
 ---
@@ -154,15 +170,18 @@ rough order of promise.
    card returns `SWITCH_ERROR`. Likely requires a vendor/ordering sequence the
    stock handler can't express — e.g. selecting `PARTITION_ACCESS` (`ext_csd[179]`)
    to `boot0` first, or writing `B_PERM_WP_DIS` before `B_PWR_WP_EN`. Needs the
-   **raw** command channel (`VUC_CMD`), which is missing.
-2. **Re-add the raw-command passthrough in the driver.** `.text` is read-only
-   via `/proc/as`, so a direct dispatch-table patch is blocked — but a
-   **writable hook** (a function pointer in `.data`/`.got` reached on the devctl
-   path) could be redirected to the existing `mmc_switch` (`0x76c0`) with a
-   crafted CMD6 arg. Unexplored.
+   **raw** command channel (`VUC_CMD` / `DCMD_SDMMC_ANY`), which is missing.
+2. **Re-add the raw-command passthrough in the driver** (equivalent of
+   Oleksandr's `FUNC_CLEAR_WP`). `.text` is read-only via `/proc/as`, so a direct
+   dispatch-table patch is blocked — but the driver's `.data`/`.bss` is **writable**,
+   so the live resmgr `dispatch_t` (in heap) or a `.data` function-pointer table
+   could route a devctl to a `.data`-resident Thumb thunk that calls the existing
+   `mmc_switch` (`0x76c0`) with `ext_csd[173]=0`. Unexplored; the single most
+   promising no-desolder lever.
 3. **Driver thread hijack** via `/proc/<pid>/ctl` + debug API
    (`DCMD_PROC_STOP` / `SETGREG`) to drive `mmc_switch` directly. Complex,
-   unexplored.
+   unexplored. (Note: `/proc/<pid>/ctl` is *absent* on the Passport, so this is
+   Classic-side only, and still needs the debug ability.)
 4. **ISP (no-desolder) or desolder** — the hardware route Blanka used. This is
    the known-good fallback and the only confirmed path that defeats the
    boot-partition write-protect.
@@ -198,7 +217,15 @@ half-open door stays shut.
    OS.
 5. **`mmcsdpub` is a publisher, not a toggler.** It only reads `DCMD_MMCSD_DEVINFO`
    and publishes PPS fields; it can't read or clear boot0 write-protect state.
-6. **The Priv's kernel is heavily hardened** (grsecurity/PaX + BIDE + Pathtrust)
+6. **`/dev/mem` is a canary decoy, not physical RAM.** It opens `O_RDWR` as root
+   but serves uniform `0xdeadbeef` for every address (and writes don't persist),
+   so there is no physical-memory bypass around the `.text` read-only wall.
+7. **The raw-command handler must be *added*, not *triggered*.** Oleksandr's
+   answer + RE show `DCMD_SDMMC_ANY`/`VUC_CMD` has no dispatch entry in the stock
+   driver (`ENOTTY`); no dcmd constant can drive a raw CMD6 on an unpatched
+   driver. Re-adding it requires a `.text` write, which is blocked by #6, the
+   errno-312 async trust wall, and the immutable `/proc/boot` ramfs.
+8. **The Priv's kernel is heavily hardened** (grsecurity/PaX + BIDE + Pathtrust)
    and the shipping `AAW068` source was never released (closest is `AAO474`),
    so weaponizing a Priv kernel bug means finding one blind.
 
