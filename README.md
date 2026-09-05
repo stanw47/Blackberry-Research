@@ -241,6 +241,26 @@ half-open door stays shut.
 - [`dumps/`](dumps/) — Classic eMMC dumps + build-info parser
 - [`resources/`](resources/) — QNX MMC devctl headers
 
+## References / cited sources
+
+External sources cited across the research. All are publicly accessible; none of
+the linked tooling/firmware is re-hosted in this repository (see [LEGAL.md](LEGAL.md)).
+
+| Source | URL | Relevance |
+|---|---|---|
+| **balika011 — Passport Conversion (BB10 → Android)** | https://balika011.hu/blackberry/guides/passport/conversion.php | The canonical end-to-end unlock: desolder eMMC → `imggen` boot0/user → `ext_csd[179]=0x08` → fastboot → recovery → `adb sideload` LineageOS. Also hosts the LineageOS/recovery images. |
+| **bb10.root.sx (Oleksandr)** | https://bb10.root.sx | BB10 root + security notes: RAM-loader `0xF7`/`0xC040` signature-flag mechanics, `install_apk`/`andrB` bar bypass, RCFS/qnx6 sysdata research, real uid-0 via `ota_info_pps.sh` symlink, and the (private) `sdmmc.zip` raw-MMC patch description. |
+| **michioxd — skip initial setup in BB QNX** | https://blog.michioxd.ch/blog/02-how-to-completely-skip-initial-setup-in-bbqnx/ | Sachesi + bb10mt + DBBT/cap.exe workflow to unpack/repack a `.signed` QCFM and rebuild an autoloader — the *user/OS* partition modification path (root-and-customize), not a bootloader unlock. |
+| **BBAndroids/imggen** | https://github.com/BBAndroids/imggen | Public (GPL-2.0) boot-image generator: `boot_gpt_insecure.bin`/`boot_gpt_secure.bin`, `stage1/2/3.mbn`, `sbl1.mbn`, `aboot.mbn`, `bbss.mbn` — the prototype bootloader + `bbss.insecure` keystone. |
+| **BBAndroids/passport_stage3** | https://github.com/BBAndroids/passport_stage3 | "Passport secure boot exploit" — MSM8974AA RPM→PBL debug-mode (`BOOT_PARTITION_SELECT=0x5D1`) path; hardware/key gated from a running OS. |
+
+### Community tooling links (referenced in notes, not re-hosted)
+
+- **Sachesi** — https://github.com/xsacha/Sachesi (extract `.signed` from autoloaders)
+- **bb10mt** (BlackBerry 10 MultiTool) — https://bb10.root.sx/downloads/bb10mt/bb10mt.zip
+- **cap.exe (FerreiraPablo BlackberrySystemPacker)** — https://github.com/FerreiraPablo/BlackberrySystemPacker
+- **QNX Security Whitepaper (Alex Plaskett, MWR)** — https://github.com/alexplaskett/Publications (mwri-qnx-security-whitepaper-2016-03-14.pdf)
+
 ## Device connection (SSH)
 
 Connecting to the Classic requires the RSA key **every session** — there is no
