@@ -264,7 +264,12 @@ the linked tooling/firmware is re-hosted in this repository (see [LEGAL.md](LEGA
 ## Device connection (SSH)
 
 Connecting to the Classic requires the RSA key **every session** — there is no
-password path and no session reuse. See [`notes/session7w-connect-ritual.md`](notes/session7w-connect-ritual.md)
+password path and no session reuse. See [`docs/ssh-connection-linux.md`](docs/ssh-connection-linux.md)
+for the complete Linux (ParrotOS/Debian) connection guide: Dev Mode enablement,
+fresh 4096-bit key generation, `blackberry-connect` tunnel, paramiko SSH with
+QNX algorithm fixes, and troubleshooting.
+
+See [`notes/session7w-connect-ritual.md`](notes/session7w-connect-ritual.md)
 for the required ritual, why `Connection refused` happens, and the quick
 reference (`ping` → check port 22 listener → `python3 connect_now.py`).
 

@@ -8,16 +8,20 @@ Complete, reproducible procedure to establish an SSH connection to a BlackBerry 
 
 Before any connection can be made, **Development Mode must be enabled on the BlackBerry Classic**:
 
+> **Important:** Development Mode **does not persist across reboots**. If the device restarts, you must re-enable it (toggle back ON) before connecting.
+
 1. On the device, swipe down from the top bezel → **Settings** (gear icon)
 2. Navigate to **Security and Privacy** → **Development Mode**
 3. Toggle **Development Mode** to **ON**
-4. When prompted, **set a Development Mode password** (default used in this guide: `<DEV_MODE_PASSWORD>`)
+4. **Authentication:**
+   - **If a Device password is already set** on the device → you will be prompted to **enter the existing Device password**.
+   - **If no Device password is set** → you will be prompted to **set a new Device password** (placeholder used in this guide: `<DEVICE_PASSWORD>`).
 5. Confirm the password
 6. The device will display a Development Mode indicator in the system bar (usually a small bug/icon)
 7. Connect the device to your Linux host via USB cable
 8. The device will enumerate as a **RNDIS/Ethernet gadget** — a new network interface appears on Linux (e.g., `enxa6e4b847d44a` with IP `169.254.0.2/30`, device at `169.254.0.1`)
 
-> **Note:** The device IP is always `169.254.0.1` on the USB/RNDIS link. The host gets `169.254.0.2` via DHCP/auto-config.
+> **Note:** The device IP is always `169.254.0.1` on the USB/RNDIS link. The host gets `169.254.0.2` via DHCP/auto-config. The Development Mode authentication uses the **Device password** (set during initial device setup or when first enabling Dev Mode).
 
 ---
 
@@ -129,7 +133,7 @@ Make it executable: `chmod +x /home/stanw47/bb-repo/connect_now.py`
 
 ### Step 1: Verify Device State
 ```bash
-# 1. Device on USB, Dev Mode ON (password: <DEV_MODE_PASSWORD>)
+# 1. Device on USB, Dev Mode ON (password: <DEVICE_PASSWORD>)
 # 2. RNDIS interface up:
 ip link show enxa6e4b847d44a
 
@@ -163,7 +167,7 @@ KEY=/tmp/bb_key.pub
 LOG=/tmp/bb_connect.log
 
 # Run detached — MUST stay running for the tunnel to persist
-nohup "$BC_BIN" 169.254.0.1 -password <DEV_MODE_PASSWORD> -sshPublicKey "$KEY" \
+nohup "$BC_BIN" 169.254.0.1 -password <DEVICE_PASSWORD> -sshPublicKey "$KEY" \
   > /tmp/bb_connect.log 2>&1 &
 disown
 ```
@@ -171,7 +175,7 @@ disown
 **Wait 15–20 seconds** for:
 1. Authentication over 4455
 2. SSH public key transfer
-3. `btool` to restart sshd (port 22 opens)
+4. `btool` to restart sshd (port 22 opens)
 
 ### Step 4: Verify Connection Log
 ```bash
@@ -196,7 +200,7 @@ timeout 5 bash -c 'echo > /dev/tcp/169.254.0.1/22' && echo "22 OPEN" || echo "22
 
 # Verify tunnel process alive
 pgrep -af Connect.jar
-# Should show: java -Xmx512M -jar .../Connect.jar 169.254.0.1 -password <DEV_MODE_PASSWORD> -sshPublicKey /tmp/bb_key.pub
+# Should show: java -Xmx512M -jar .../Connect.jar 169.254.0.1 -password <DEVICE_PASSWORD> -sshPublicKey /tmp/bb_key.pub
 ```
 
 ### Step 6: SSH as `devuser` with the Fresh Private Key
@@ -262,7 +266,7 @@ c.close()
 
 ## 7. Every-Session Checklist
 
-- [ ] Device on USB, Dev Mode ON, password `<DEV_MODE_PASSWORD>` set in Settings → Security and Privacy → Development Mode
+- [ ] Device on USB, Dev Mode ON, password `<DEVICE_PASSWORD>` set in Settings → Security and Privacy → Development Mode
 - [ ] `ping 169.254.0.1` OK
 - [ ] Ports: `4455 OPEN`, `22 CLOSED`, `5555 OPEN`
 - [ ] Fresh 4096-bit key generated (`ssh-keygen -t rsa -b 4096 -f /tmp/bb_key -N "" -q`)
@@ -299,14 +303,14 @@ c.close()
 ```bash
 # Quick state check
 ping -c1 169.254.0.1 && \
-timeout 2 bash -c 'echo > /dev/tcp/169.254.0.1/4455' && echo "4455 OK" || echo "4455 DOWN" && \
+timeout 2 bash -c 'echo > /dev/tcp/169.254.0.1/4455' && echo "4455 OK" || echo "4455 DOWN"
 timeout 2 bash -c 'echo > /dev/tcp/169.254.0.1/22' && echo "22 OK" || echo "22 DOWN"
 
 # Full fresh connection (copy-paste)
 KEY=$(mktemp /tmp/bb_key.XXXXXX)
 ssh-keygen -t rsa -b 4096 -f "$KEY" -N "" -q
 nohup ~/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect \
-  169.254.0.1 -password <DEV_MODE_PASSWORD> -sshPublicKey "${KEY}.pub" > /tmp/bb.log 2>&1 &
+  169.254.0.1 -password <DEVICE_PASSWORD> -sshPublicKey "${KEY}.pub" > /tmp/bb.log 2>&1 &
 sleep 20 && cat /tmp/bb.log
 BBKEY="$KEY" python3 /home/stanw47/bb-repo/connect_now.py
 ```
@@ -318,8 +322,8 @@ BBKEY="$KEY" python3 /home/stanw47/bb-repo/connect_now.py
 - **BlackBerry 10 NDK / `blackberry-connect`**: `archive.org/details/bbdevtools` → `bbndk.win32.tools.10.3.1.12.zip`
 - **Paramiko QNX compatibility**: Disable `rsa-sha2-512` / `rsa-sha2-256`, set `server_sig_algs=False`
 - **Device IP**: Always `169.254.0.1` on USB/RNDIS; host gets `169.254.0.2/30`
-- **Dev Mode password**: `<DEV_MODE_PASSWORD>` (set in Settings → Security and Privacy → Development Mode)
+- **Device password**: `<DEVICE_PASSWORD>` (set in Settings → Security and Privacy → Development Mode; same as device lock password)
 
 ---
 
-*Last verified: 2026-09-06 on ParrotOS Security Edition (OpenJDK 25), BlackBerry Classic SQC100 (BB10 10.3.3, Build `MSM8960_V3.2.1.1_N_CLASSICNA_Rev:11`), Dev Mode password `<DEV_MODE_PASSWORD>`.*
+*Last verified: 2026-09-06 on ParrotOS Security Edition (OpenJDK 25), BlackBerry Classic SQC100 (BB10 10.3.3, Build `MSM8960_V3.2.1.1_N_CLASSICNA_Rev:11`), Device password `<DEVICE_PASSWORD>`.*
