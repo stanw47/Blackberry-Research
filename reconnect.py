@@ -11,7 +11,7 @@ import subprocess
 import os
 
 # Path to blackberry-connect
-bb_connect = "/tmp/pp/extracted/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect"
+bb_connect = "/home/stanw47/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect"
 if not os.path.exists(bb_connect):
     print("ERROR: blackberry-connect not found at", bb_connect)
     exit(1)
