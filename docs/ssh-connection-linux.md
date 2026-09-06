@@ -52,16 +52,16 @@ The `blackberry-connect` tool is part of the **BlackBerry 10 Native SDK (NDK)**.
 - Source: BlackBerry Developer site (legacy) or `archive.org/details/bbdevtools`
 - Extract to a known path, e.g.:
   ```bash
-  mkdir -p ~/priv-research
-  unzip bbndk.win32.tools.10.3.1.12.zip -d ~/priv-research/bbndk-tools
+  mkdir -p $HOME/priv-research
+  unzip bbndk.win32.tools.10.3.1.12.zip -d $HOME/priv-research/bbndk-tools
   ```
 
 **Key paths after extraction:**
 | Component | Path |
 |-----------|------|
-| Wrapper script | `~/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect` |
-| JAR file | `~/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/lib/Connect.jar` |
-| Wrapper `.bat` | `~/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect.bat` (Windows) |
+| Wrapper script | `$HOME/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect` |
+| JAR file | `$HOME/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/lib/Connect.jar` |
+| Wrapper `.bat` | `$HOME/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect.bat` (Windows) |
 
 The wrapper is a simple shell script:
 ```bash
@@ -71,7 +71,7 @@ java -Xmx512M -jar "$here/../lib/Connect.jar" "$@"
 ```
 
 ### 2.3 Python SSH Helper Script (`connect_now.py`)
-Save as `/home/stanw47/bb-repo/connect_now.py` (or any path). This script handles the QNX-specific SSH algorithm requirements.
+Save as `~/bb-repo/connect_now.py` (or any path). This script handles the QNX-specific SSH algorithm requirements.
 
 ```python
 #!/usr/bin/env python3
@@ -107,7 +107,7 @@ print(stdout.read().decode(errors='replace'))
 c.close()
 ```
 
-Make it executable: `chmod +x /home/stanw47/bb-repo/connect_now.py`
+Make it executable: `chmod +x ~/bb-repo/connect_now.py`
 
 ---
 
@@ -162,7 +162,7 @@ ssh-keygen -t rsa -b 4096 -f /tmp/bb_key -N "" -q
 ### Step 3: Start `blackberry-connect` Detached (Tunnel + Key Push)
 ```bash
 # Paths (adjust to your extraction location)
-BC_BIN=~/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect
+BC_BIN=$HOME/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect
 KEY=/tmp/bb_key.pub
 LOG=/tmp/bb_connect.log
 
@@ -208,7 +208,7 @@ pgrep -af Connect.jar
 
 ```bash
 # Using the helper script (BBKEY env var points to fresh private key)
-BBKEY=/tmp/bb_key python3 /home/stanw47/bb-repo/connect_now.py
+BBKEY=/tmp/bb_key python3 ~/bb-repo/connect_now.py
 ```
 **Expected output:**
 ```
@@ -309,10 +309,10 @@ timeout 2 bash -c 'echo > /dev/tcp/169.254.0.1/22' && echo "22 OK" || echo "22 D
 # Full fresh connection (copy-paste)
 KEY=$(mktemp /tmp/bb_key.XXXXXX)
 ssh-keygen -t rsa -b 4096 -f "$KEY" -N "" -q
-nohup ~/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect \
+nohup $HOME/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect \
   169.254.0.1 -password <DEVICE_PASSWORD> -sshPublicKey "${KEY}.pub" > /tmp/bb.log 2>&1 &
 sleep 20 && cat /tmp/bb.log
-BBKEY="$KEY" python3 /home/stanw47/bb-repo/connect_now.py
+BBKEY="$KEY" python3 ~/bb-repo/connect_now.py
 ```
 
 ---

@@ -8,7 +8,7 @@ paramiko.transport.Transport.__init__ = _new
 
 import os
 key = paramiko.RSAKey.from_private_key_file(
-    os.environ.get("BBKEY", "/home/stanw47/Documents/blackberry-research/id_rsa"))
+    os.environ.get("BBKEY", "~/Documents/blackberry-research/id_rsa"))
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 try:

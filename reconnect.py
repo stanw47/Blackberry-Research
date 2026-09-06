@@ -11,7 +11,7 @@ import subprocess
 import os
 
 # Path to blackberry-connect
-bb_connect = "/home/stanw47/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect"
+bb_connect = "~/priv-research/bbndk-tools/host_10_3_1_12/win32/x86/usr/bin/blackberry-connect"
 if not os.path.exists(bb_connect):
     print("ERROR: blackberry-connect not found at", bb_connect)
     exit(1)
@@ -21,7 +21,7 @@ print("Starting blackberry-connect...")
 result = subprocess.run([
     bb_connect, "169.254.0.1",
     "-password", "61482501",
-    "-sshPublicKey", "/home/stanw47/Documents/blackberry-research/id_rsa.pub"
+    "-sshPublicKey", "~/Documents/blackberry-research/id_rsa.pub"
 ], capture_output=True, text=True, timeout=30)
 print("blackberry-connect stdout:", result.stdout)
 print("blackberry-connect stderr:", result.stderr)
@@ -36,7 +36,7 @@ def _new(self, *a, **kw):
     return _orig(self, *a, **kw)
 paramiko.transport.Transport.__init__ = _new
 
-key = paramiko.RSAKey.from_private_key_file("/home/stanw47/Documents/blackberry-research/id_rsa")
+key = paramiko.RSAKey.from_private_key_file("~/Documents/blackberry-research/id_rsa")
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 c.connect(hostname="169.254.0.1", port=22, username="devuser", pkey=key,
