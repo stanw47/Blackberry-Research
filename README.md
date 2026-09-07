@@ -108,11 +108,26 @@ below was tried and is logged in [`notes/`](notes/).
 - **Classic / Passport: fully rooted** (real uid-0). The bootloader unlock is
   **fully understood and pinned to a single byte** — but writing that byte is
   **hardware-gated** (boot-partition write-protect).
+- **EDL RAM-loader lane is fully working on Linux (bb10mt + `cap.exe`
+  loaders).** Full `info` readouts (hardware ID, BootROM, partition map, OS
+  metrics, MCT) and complete OS/radio flashes are proven end-to-end against the
+  Classic. Loader + password handling are documented in repo tooling.
+- **The Classic's OS flash is recoverable via Windows `cap.exe` autoloaders.**
+  A bb10mt-flashed OS red-blinks, while the **byte-identical carriers** flash
+  fine under Windows — pinning the red-blink to the *stub's flash-time behavior*
+  (install-seal / loader handshake), not to the payload. The device is currently
+  booting 10.3.3.3216 rooted.
 - **Priv: not rooted.** Requires a kernel 0-day (none public) or hardware
   (ISP) access to write `hlos_unsigned.tkn` to `nvuser` (which is *not*
   write-protected, unlike boot0 — so the Priv's equivalent step is easier to
   *write*, but its block devices are SELinux-gated and there is no
   `g_Disk_Drivers` equivalent).
+
+> **Current spike:** a no-desolder **Passport BB10 → Android conversion**
+> (imggen) hinges on two provable items — a raw EDL write of the hardware boot
+> partition (marker-test tool ready: `tools/classic_repack.py`), and feeding
+> imggen's raw `.img` outputs through a QCFM/autoloader wrap. See
+> [`notes/session12-edl-signature-passport.md`](notes/session12-edl-signature-passport.md).
 
 ---
 
@@ -156,7 +171,31 @@ in [`notes/`](notes/)).
    a uniform `0xdeadbeef` canary for *every* physical address (full-4GB scan:
    zero ELF headers found), and writes do not persist. No physical-RAM window.
 10. **Priv BIDE/Pathtrust** are detection/enforcement LSMs; BIDE never blocks,
-   Pathtrust can. Both are defensively written; no unprivileged escalation bug.
+    Pathtrust can. Both are defensively written; no unprivileged escalation bug.
+11. **The 560-byte install-seal contract.** The RAM-loader's `F9 40`
+    (SIGNATURE_TRAILER) seal is what SBL validates to accept an OS install.
+    bb10mt only strips+sends a carrier's last 560 bytes if they begin with
+    `QNXH`; the OS carrier ends in 560 zero bytes, so bb10mt streams the zeros
+    and sends a fake seal. `cap.exe` embeds the real 560-byte seal as a PEM
+    `SIGNATURE BLOCK` (base64 w/ `Version:` header; decodes to exactly 560 B of
+    `0xFF` EMSA-PKCS#1 padding + `00010001` RSA records + `1F2DC8D7` footer).
+12. **Red-blink root cause is the stub, not the payload.** Flashing the
+    *byte-identical* OS/radio carriers: bb10mt → red-blink; Windows `cap.exe` →
+    boots. Replacing the OS tail-560 with cap's real block via bb10mt still
+    red-blinked — the stub does more flash-time state (secure-boot exchange /
+    in-stream signature) than just `F9`. Capturing cap.exe-vs-bb10mt USB traffic
+    on identical carriers is now the highest-value experiment.
+13. **Classic is MSM8960 (SBL2→SBL1 boot chain); imggen is MSM8974-only.**
+    Real Classic `boot0.img` GPT = `SBL2` (LBA 34-521) + `SBL1` (LBA 522-719),
+    PM8921/22 PMIC. imggen's hwids are all `0x2c` family byte (Passport/oslo);
+    Classic is `0x27` (`0x9700270a`). Its bundled MSM8974 loaders **cannot**
+    boot an MSM8960. Fundamental SoC mismatch → no Classic Android via imggen.
+14. **Passport no-desolder conversion is the viable Android path.** Passport =
+    MSM8974 = imggen's exact target; we have the rooted Passport autoloader,
+    the `8D002C0A` EDL loader, and proven OS-side eMMC dumps. Remaining gates:
+    raw hardware-boot-partition write via EDL (marker test), and wrapping
+    imggen's raw outputs for the EDL lane. EDL recovery persists after boot0
+    corruption, so worst case = restore.
 
 ---
 
@@ -191,6 +230,16 @@ rough order of promise.
 6. **Priv `nvuser` token write** — the Priv's unlock token lives in `nvuser`
    (not HW write-protected); reaching the raw partition (ISP or root) would let
    `hlos_unsigned.tkn` be written.
+7. **Raw EDL hardware-boot-partition writer.** `bb10mt` is QCFM-only and never
+   targets `boot0`. Building a thin raw sector-writer (`F7/F8`, `EE`, `DD`) on
+   the existing loader lane would (a) prove boot0 write via the marker test
+   (`tools/classic_repack.py`), and (b) let imggen's `new_boot0`/`new_user` be
+   flashed to the Passport **without desoldering**.
+8. **Capture cap.exe-vs-bb10mt USB delta.** Both flash the *identical* carriers,
+   yet Windows boots and Linux red-blinks. A packet-level diff of the two flash
+   sessions (loader commands, seal/hash exchanges, PreFlash byte) pins the stub's
+   injection — then bb10mt (or a custom autoloader) can emulate it, enabling
+   custom-image flashing on the same lane.
 
 ---
 
@@ -236,10 +285,11 @@ half-open door stays shut.
 - [`notes/`](notes/) — session-by-session research notes + bug report
 - [`analysis/`](analysis/) — sepolicy parsers, disassembly, trustlet JSON
 - [`tools/`](tools/) — helper scripts and third-party tool sources
-  (`bb10root-tools`, `imggen`, `passport_stage3`)
+  (`bb10root-tools`, `imggen`, `passport_stage3`, `classic_repack.py`)
 - [`bootloaders/`](bootloaders/) — prototype (imggen) bootloader images
 - [`dumps/`](dumps/) — Classic eMMC dumps + build-info parser
 - [`resources/`](resources/) — QNX MMC devctl headers
+- [`docs/`](docs/) — cross-device analysis + device/connection reference
 
 ## References / cited sources
 
@@ -248,7 +298,7 @@ the linked tooling/firmware is re-hosted in this repository (see [LEGAL.md](LEGA
 
 | Source | URL | Relevance |
 |---|---|---|
-| **balika011 — Passport Conversion (BB10 → Android)** | https://balika011.hu/blackberry/guides/passport/conversion.php | The canonical end-to-end unlock: desolder eMMC → `imggen` boot0/user → `ext_csd[179]=0x08` → fastboot → recovery → `adb sideload` LineageOS. Also hosts the LineageOS/recovery images. |
+| **balika011 — Passport Conversion (BB10 → Android)** | https://balika011.hu/blackberry/guides/passport/conversion.php | The canonical end-to-end unlock: desolder eMMC → `imggen` boot0/user → `ext_csd[179]=0x08` → fastboot → recovery → `adb sideload` LineageOS. Also hosts the LineageOS/recovery images. **Now under active evaluation as a no-desolder EDL flash.** |
 | **bb10.root.sx (Oleksandr)** | https://bb10.root.sx | BB10 root + security notes: RAM-loader `0xF7`/`0xC040` signature-flag mechanics, `install_apk`/`andrB` bar bypass, RCFS/qnx6 sysdata research, real uid-0 via `ota_info_pps.sh` symlink, and the (private) `sdmmc.zip` raw-MMC patch description. |
 | **michioxd — skip initial setup in BB QNX** | https://blog.michioxd.ch/blog/02-how-to-completely-skip-initial-setup-in-bbqnx/ | Sachesi + bb10mt + DBBT/cap.exe workflow to unpack/repack a `.signed` QCFM and rebuild an autoloader — the *user/OS* partition modification path (root-and-customize), not a bootloader unlock. |
 | **BBAndroids/imggen** | https://github.com/BBAndroids/imggen | Public (GPL-2.0) boot-image generator: `boot_gpt_insecure.bin`/`boot_gpt_secure.bin`, `stage1/2/3.mbn`, `sbl1.mbn`, `aboot.mbn`, `bbss.mbn` — the prototype bootloader + `bbss.insecure` keystone. |
