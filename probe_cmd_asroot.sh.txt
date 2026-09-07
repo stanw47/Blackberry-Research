@@ -1,0 +1,1 @@
+# gather /proc pid list as root, then for each read cmdline

@@ -24,5 +24,8 @@ userdata_sparse.img
 NON-HLOS.bin
 *.zip
 
+# Large unpacked carrier work dir (multi-GB extracted flash images)
+/work/
+
 # Keep everything else explicit — do not blanket-ignore *.mbn/*.img here;
 # the curated copies under bootloaders/ and resources/ are intentional.
