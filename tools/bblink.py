@@ -110,7 +110,7 @@ class BBSession:
                     pass
         except Exception:
             pass
-        d.claim_interface(iface)
+        usb.util.claim_interface(d, iface)
         self.claimed = iface
 
     def _open_pid(self, pid, timeout=6000):
@@ -229,6 +229,13 @@ class BBSession:
         return out
 
     # -- bootrom ops ---------------------------------------------------------
+    def session_reboot(self):
+        """Reboot the OS-session USB device (PID 0x8017) back to BootROM.
+        Mirrors bb10mt TBBUSB.Reboot = Channel0(cmd=3, [])."""
+        resp, _ = self.channel0(3, b'')
+        self.pktnum[0] = 0
+        return resp
+
     def ping0(self):
         self.channel0(1, bytes([0x14, 0x05, 0x83, 0x19, 0, 0, 0, 0]))
 
@@ -545,6 +552,9 @@ def cmd_info(sess, opts):
     print("  vendorID %04X" % sess.vendor_id())
     mct = sess.get_mct()
     print("  MCT %d bytes: %s..." % (len(mct), mct[:64].hex()))
+    if getattr(opts, 'out', None):
+        open(opts.out, 'wb').write(mct)
+        print("  MCT saved -> %s" % opts.out)
     if opts.keep:
         sess.reboot_loader()
 
@@ -659,7 +669,7 @@ def main():
 
     p = sub.add_parser('selftest')
     p = sub.add_parser('probe'); p.add_argument('--timeout', default=None)
-    p = sub.add_parser('info'); p.add_argument('--keep', action='store_true')
+    p = sub.add_parser('info'); p.add_argument('--keep', action='store_true'); p.add_argument('-o', '--out')
     p = sub.add_parser('cmd2'); p.add_argument('cmd'); p.add_argument('data', nargs='?'); p.add_argument('-f', '--file')
     p = sub.add_parser('cread'); p.add_argument('addr'); p.add_argument('size'); p.add_argument('-f', '--file')
     p = sub.add_parser('dump'); p.add_argument('out'); p.add_argument('--base', default='0'); p.add_argument('len')
