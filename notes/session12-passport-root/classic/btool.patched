@@ -1,0 +1,56 @@
+#!/bin/sh
+traverse() {
+    typeset cmd="$1"
+    typeset full_path="$2"
+    typeset current_path=""
+    typeset part
+    typeset old_ifs="$IFS"
+    IFS="/"
+    for part in $full_path; do
+        if [ -n "$part" ]; then
+            current_path="$current_path/$part"
+            eval "$cmd \"$current_path\""
+        fi
+    done
+    IFS="$old_ifs"
+}
+
+ln -sPf /var/etc/system/config/sud.cfg /base/etc/system/config/sud.cfg
+
+acl="setfacl -m m::rwx,u:1000:rwx,u:devuser:rwx,g:devuser:rwx,g:1000:rwx"
+mkdir -p /var/android/recovery
+chmod -R 777 /var/android
+eval "${acl} /var/android"
+eval "${acl} /var/android/recovery"
+traverse "${acl}" "/apps/sys.android.gYABgKAOw1czN6neiAT72SGO.ns/native/system/xbin/btool"
+traverse "${acl}" "/apps/sys.android.gYABgKAOw1czN6neiAT72SGO.ns/native/scripts/start-android-core.sh"
+
+/apps/sys.android.gYABgKAOw1czN6neiAT72SGO.ns/native/system/bin/r
+/proc/boot/pathtrust !/accounts/devuser/rootdata/launcher_patcher
+/proc/boot/pathtrust !/base/bin/mod_nvram
+/proc/boot/pathtrust !/base/bin/__root
+/accounts/devuser/rootdata/launcher_patcher >> /tmp/launcher_patcher.log
+
+#slay -f qconnDoor
+slay -f sshd
+
+echo "usbdnet_ipaddr::169.254.0.1" >> /pps/services/usbd/settings
+
+/usr/sbin/sshd
+
+pid=$(pidin -F "%p %a %A" | awk '/[p]ython/ && /sud\.py/ {print $2}')
+[ -n "$pid" ] && slay -f "$pid"
+
+print "msg::Notify\ndat:json:{\"Title\":\"root\",\"Subtitle\":\"Congratulations! The device has been successfully rooted!\",\"Type\":\"alertuib\",\"AppId\":\"sys.service\",\"ItemId\":\"root`date -t`\",\"PayloadURI\":\"https://bb10.root.sx/\"}" >> /pps/system/notify/control
+print "msg::wakeupDevice\ndat::" >> /pps/system/navigator/control
+
+BASE="/accounts/1000/shared/downloads/nvram"
+DIR="$BASE/$(date +'%Y%m%d-%H%M%S')"
+
+mod_nvram -b "$DIR" &&
+chown -R 1000:1000 "$DIR" &&
+chmod -R 755 "$BASE" &&
+ln -sPf "$DIR" "$BASE/latest"
+
+. /base/scripts/sudtools.sh
+sud_install_package /accounts/devuser/rootdata/Term49.bar

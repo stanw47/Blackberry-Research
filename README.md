@@ -128,13 +128,29 @@ below was tried and is logged in [`notes/`](notes/).
   `g_Disk_Drivers` equivalent).
 
 > **Current spike:** a no-desolder **Passport BB10 → Android conversion**
-> (imggen) is now at the flash step. NV unlock bits (record `0x2019`, bits
-> 42/43) are **set and persist across reboot**; `imggen` payloads are built and
-> validated offline (`new_boot0.img` / `new_user.img`); the Passport RAM-loader
-> lane is standing by (`tools/bblink.py` + `tools/listen_flash.py`, loader
-> `8D002C0A` @ `0x0DD00000`). Remaining gate: a **read-only loader session to
-> map the Boot0 region**, then the boot0-targeted write. See
-> [`notes/session15-oleksandr-unlock-and-boot0-build.md`](notes/session15-oleksandr-unlock-and-boot0-build.md).
+> (imggen) is now at the flash step. `imggen` payloads are built and validated
+> offline (`boot0.img` / `new_user.img`); the Passport RAM-loader lane is
+> standing by (`tools/bblink.py` + `tools/listen_flash.py`, loader
+> `8D002C0A` @ `0x0DD00000`).
+>
+> **Boot0 write-protect status (2026-09-09).** `BOOT_WP[173] = 0x04`
+> (bit2 = `B_PERM_WP_EN`, *permanent*) and is **re-applied / intact after every
+> reboot**. Since session16 the rimboot software lane has been progressively
+> disproven on the live Passport:
+> - the WP gate in `rimboot_update` aborts before any write (session16);
+> - NOP-bypassing that gate still fails with `EROFS` at the driver level — the
+>   write is card-refused, and the original bootrom stays intact (session17);
+> - Oleksandr's NVRAM-arming power-cycle ritual was forced via a patched
+>   `rimboot_update` (`WP:1 / WP_PROGRESS:1`, clean shutdown), yet after reboot
+>   `BOOT_WP[173]` is still `0x04` (session18).
+>
+> Remaining software avenue: a live-driver raw `cmd6 SWITCH ext_csd[173]=0`
+> thunk (sessions 9a/10a/18), which the stock driver lacks and which the
+> `/proc/<pid>/as` ability regression currently blocks. Else the hardware/EDL
+> lane (`tools/listen_flash.py --armed`) is the known-good flash path. See
+> [`notes/session16-rimboot-main-flow.md`](notes/session16-rimboot-main-flow.md),
+> [`notes/session17-rimboot-wp-nop-bypass.md`](notes/session17-rimboot-wp-nop-bypass.md),
+> [`notes/session18-nv-powercycle-decisive-negative.md`](notes/session18-nv-powercycle-decisive-negative.md).
 
 ---
 
@@ -148,10 +164,14 @@ in [`notes/`](notes/)).
 2. **`bbss.insecure`** = build-info **field8 (u32)** at **`boot0` offset
    `0x35a98`** on the Classic. Setting it to `1` enables "insecure device;
    ignoring SBL auth failure".
-3. **Boot write-protect is *temporary*, not permanent**: `ext_csd[170]
-   BOOT_CONFIG_PROT = 0x00`, `ext_csd[173] B_BOOT_WP = 0x04` (only `B_PWR_WP_EN`
-   set) — so `boot0` is writable *within* a power-on session **if** `B_PWR_WP_EN`
-   can be cleared.
+3. **Boot write-protect is *permanent*, not temporary** (Passport, live
+   re-read): `BOOT_WP[173] = 0x04` = bit2 `B_PERM_WP_EN`. `BOOT_CONFIG_PROT[170]
+   = 0x00` and `BOOT_WP_STATUS[174] = 0x0A`. Arming the NVRAM WP bits
+   (`0x2019`) and power-cycling (the Oleksandr ritual) does **not** clear it
+   (session18) — only a live CMD6 to `ext_csd[173]=0` (software thunk) or the
+   hardware/EDL flash lane can get a boot0 write. (Classes/Legacy notes that
+   labeled this "B_PWR_WP_EN / temporary" predate the full 512-byte EXT_CSD
+   decode; the correct bitmap is `0x04` = permanent.)
 4. **QNX MMC devctl constants** (decoded):
    `DCMD_MMCSD_WRITE_PROTECT = 0xC0201A11`, `DCMD_MMCSD_VUC_CMD = 0xC0441A16`,
    `DCMD_MMCSD_CARD_REGISTER = 0xC0181A14`; encoding
@@ -215,6 +235,18 @@ in [`notes/`](notes/)).
     offline; remaining gate = a read-only loader session to map the Boot0
     region, then the loader's raw boot-region write op (the QCFM path has no
     boot0 container type — see notes session15).
+17. **The rimboot (`rimboot_update`) software lane is closed on the live
+    Passport** (sessions 16–18). `BOOT_WP[173] = 0x04` is bit2
+    (`B_PERM_WP_EN`); the tool's own WP gate aborts at `rc=1` before any write
+    (session16). NOP-bypassing that gate still fails with `EROFS: Read-only
+    file system` at the driver/card level — `ORIGINAL BOOTROM IS STILL INTACT`
+    (session17). Forcing the tool's `r0==1` power-on-protected branch arms the
+    NV bits (`WP:1 WP_PROGRESS:1`) and cleanly shuts down, but a full power
+    cycle leaves `BOOT_WP[173]` at `0x04` (session18) — the NVRAM ritual does
+    not clear a permanent WP bit. No userland path reaches a `cmd6
+    SWITCH ext_csd[173]=0` on the stock driver (the raw handler is absent, and
+    `/proc/<pid>/as` has been ability-gated since session11). The EDL/RAM-loader
+    lane (hardware-adjacent) is the remaining known-good boot0 write path.
 
 ---
 
@@ -254,7 +286,7 @@ rough order of promise.
    primitives (`F7/F8`, `EE`, `cread`, `preflash`, `complete`, `reboot`) plus
    MCT save (`info -o/--out`) on the same lane. Remaining work: map the live
    Boot0 MCT entry (kind `$2B`) via a read-only session and craft the
-   boot0-targeted write for `new_boot0`/`new_user` on the Passport. Raw EDL on a
+   boot0-targeted write for `boot0`/`new_user` on the Passport. Raw EDL on a
    wiped unit can trigger a security wipe, so sessions are listener-first on a
    live device (notes session14/15).
 8. **Capture cap.exe-vs-bb10mt USB delta.** Both flash the *identical* carriers,
@@ -278,10 +310,9 @@ half-open door stays shut.
    MMC command" path. Re-adding it means patching `.text`, which is read-only
    via `/proc/as`.
 3. **`WRITE_PROTECT` reaches but fails at the switch.** The driver *does* send
-   `CMD6 SWITCH ext_csd[173]=0`, but the eMMC rejects it (`SWITCH_ERROR`).
-   Clearing a power-on WP flag through the standard path evidently needs a
-   sequence (partition select / perm-disable ordering) the stock handler can't
-   articulate.
+   `CMD6 SWITCH ext_csd[173]=0`, but the eMMC rejects it (`SWITCH_ERROR`), and
+   `BOOT_WP[173]` is bit2 `B_PERM_WP_EN` (permanent) — not a power-on flag. The
+   NVRAM-arming power-cycle ritual also leaves it at `0x04` (session18).
 4. **`passport_stage3` (PBL debug mode) is not OS-reachable.** It requires the
    PBL to already be in download/debug (Sahara/EDL-like) mode, which is
    hardware/key gated — same gate as EDL. Not a software path from the running

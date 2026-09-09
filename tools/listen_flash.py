@@ -15,7 +15,15 @@ def present(out):
         return False
     return [p.strip().strip("'").strip('"') for p in m.group(1).split(',') if p.strip()]
 
-print('listener: waiting for BlackBerry device (plug in the powered-off Passport)', flush=True)
+if '--armed' not in sys.argv:
+    print('SAFETY: this listener auto-runs loader sessions. It is DISARMED by default.',
+          '\nWARNING: on a password-protected device ANY loader session (even read-only)',
+          '\nforces a full security wipe. Only arm it (--armed) when you are certain the',
+          '\ndevice is in a wiped/unprotected "Reload OS" state.',
+          '\nRe-run with --armed to actually listen.', flush=True)
+    sys.exit(0)
+
+print('ARMED LISTENER: waiting for BlackBerry device (plug in the powered-off Passport)', flush=True)
 checked = 0
 while True:
     try:
