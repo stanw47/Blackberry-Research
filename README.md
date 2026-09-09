@@ -126,6 +126,12 @@ below was tried and is logged in [`notes/`](notes/).
   write-protected, unlike boot0 — so the Priv's equivalent step is easier to
   *write*, but its block devices are SELinux-gated and there is no
   `g_Disk_Drivers` equivalent).
+- **Passport live driver forensics complete** (session19): gate 0xf182 + WP
+  handler 0x108d0 decoded; per-node `ext` model established; CID live-read
+  confirmed; ext_csd fully uncached; boot0 SBL1 + boot1 blank + os0 IFS
+  dumped. The device subsequently rebooted into red-blink (known stub/payload
+  mismatch); recovery via EDL lane (`tools/bblink.py` + `listen_flash.py`) or
+  hardware.
 
 > **Current spike:** a no-desolder **Passport BB10 → Android conversion**
 > (imggen) is now at the flash step. `imggen` payloads are built and validated
@@ -248,6 +254,44 @@ in [`notes/`](notes/)).
     `/proc/<pid>/as` has been ability-gated since session11). The EDL/RAM-loader
     lane (hardware-adjacent) is the remaining known-good boot0 write path.
 
+18. **MMC driver gate 0xF182 and WP handler 0x108D0 fully decoded** (session19).
+    The gate at `base+0xf182` (runtime `0x100e2182`) is the common entry for
+    `WRITE_PROTECT` (`0xC0201A11`). It requires: (1) `[ext+4].bit0 == 1`
+    (global "WP allowed" flag in the per-open `ext` structure), and
+    (2) `[ext + idx + 0x1f8] != 0` (slot "attached" flag), where
+    `idx = msg[0xa]*0x2c8 + msg[0xb]*0x58` (target/lun from devctl header
+    bytes 10/11). The WP handler (`0x108d0`, runtime `0x100e38d0`) computes
+    the same `idx`, calls the gate, then requires `[ext+0x24] == 1` (u16)
+    before calling the `mmc_switch` worker (`0x100d4`) with the mode-table
+    byte (`0->0x1d, 1(BOOT_WP)->0x1c, 2->0x1e, 3->0x1f`).
+
+19. **`ext` is per-open-node, not a single global** (session19). Identical
+    `WRITE_PROTECT` probes on `/dev/emmc/user0` (rc=0) and `/dev/emmc/boot1`
+    (rc=5/EIO) use the same payload (`lba=0 → idx=0`) yet diverge. The
+    difference is the `ext = [ctx+8]` pointer itself: each device node open
+    gets its own `ctx` with a distinct `ext`. User0's ext has `[ext+4].bit0=1`
+    and `[ext+0x1f8]!=0`; boot1's ext lacks one or both. The slot-attached
+    flags are per-open-context.
+
+20. **CID is live-read, not cached** (session19). All three partitions
+    (boot0, boot1, user0) return identical CID
+    `00 91 b2 63 55 93 00 34 45 47 32 33 30 00 01 11` via
+    `DCMD_MMCSD_CARD_REGISTER`; a 16-byte pattern scan of all writable RAM
+    (heap1/2, module data, anon spans) finds zero copies.
+
+21. **No ext_csd cache anywhere** (session19). Exact 512-byte signature scan
+    + structural anchor scan (`[0xAA]=00, [0xAD]=04, [0xAE]=0A`) across all
+    writable regions (heap1/2, module data m1/m2/m3, all anon spans an0–an6)
+    yields zero hits. The driver does not cache the 512-byte ext_csd blob.
+
+22. **Passport `boot0` contains SBL1 (1 MiB), `boot1` is blank** (session19).
+    Full 4 MiB `boot0` dump: 1 MiB nonzero (0x0..0x100000) = SBL1 preloader.
+    EFI PART at 0x200 is a minimal decoy; single GPT entry "BootROM" (LBA
+    34–511). SBL1 strings: "Build info", "Loading SBL image", "SBL1
+    decompression failed!", "Jump to SBL1", "DDR training occurred".
+    `boot1` is all zeros (~4 KiB noise). `os0` holds the QNX IFS (v1.2b boot
+    loader + startup). Dumps in `dumps/passport/`.
+
 ---
 
 ## Open leads
@@ -261,26 +305,35 @@ rough order of promise.
    stock handler can't express — e.g. selecting `PARTITION_ACCESS` (`ext_csd[179]`)
    to `boot0` first, or writing `B_PERM_WP_DIS` before `B_PWR_WP_EN`. Needs the
    **raw** command channel (`VUC_CMD` / `DCMD_SDMMC_ANY`), which is missing.
+
 2. **Re-add the raw-command passthrough in the driver** (equivalent of
    Oleksandr's `FUNC_CLEAR_WP`). `.text` is read-only via `/proc/as`, so a direct
    dispatch-table patch is blocked — but the driver's `.data`/`.bss` is **writable**,
    so the live resmgr `dispatch_t` (in heap) or a `.data` function-pointer table
    could route a devctl to a `.data`-resident Thumb thunk that calls the existing
-   `mmc_switch` (`0x76c0`) with `ext_csd[173]=0`. Unexplored; the single most
-   promising no-desolder lever.
+   `mmc_switch` (`0x76c0`) with `ext_csd[173]=0`. **Session19 caveat**: the
+   `ext` structure is per-open-node, so a global `.data` patch would need to
+   target the `ext` used by the boot1 open context (or patch the open routine
+   to set `[ext+4].bit0` and `[ext+0x1f8]` at allocation time). Unexplored; the
+   single most promising no-desolder lever.
+
 3. **Driver thread hijack** via `/proc/<pid>/ctl` + debug API
    (`DCMD_PROC_STOP` / `SETGREG`) to drive `mmc_switch` directly. Complex,
    unexplored. (Note: `/proc/<pid>/ctl` is *absent* on the Passport, so this is
    Classic-side only, and still needs the debug ability.)
+
 4. **ISP (no-desolder) or desolder** — the hardware route Blanka used. This is
    the known-good fallback and the only confirmed path that defeats the
    boot-partition write-protect.
+
 5. **Priv root via the `kgsl`/QSEE surface** — the community-shared
    `kgsl-exploit` repository may be relevant to the Priv's Android kernel
    (MSM8992), though it is an Android-era driver, not BB10.
+
 6. **Priv `nvuser` token write** — the Priv's unlock token lives in `nvuser`
    (not HW write-protected); reaching the raw partition (ISP or root) would let
    `hlos_unsigned.tkn` be written.
+
 7. **Raw EDL hardware-boot-partition writer.** `bb10mt` is QCFM-only and never
    targets `boot0`; `tools/bblink.py` now implements the full raw sector-writer
    primitives (`F7/F8`, `EE`, `cread`, `preflash`, `complete`, `reboot`) plus
@@ -289,6 +342,7 @@ rough order of promise.
    boot0-targeted write for `boot0`/`new_user` on the Passport. Raw EDL on a
    wiped unit can trigger a security wipe, so sessions are listener-first on a
    live device (notes session14/15).
+
 8. **Capture cap.exe-vs-bb10mt USB delta.** Both flash the *identical* carriers,
    yet Windows boots and Linux red-blinks. A packet-level diff of the two flash
    sessions (loader commands, seal/hash exchanges, PreFlash byte) pins the stub's
@@ -341,6 +395,7 @@ half-open door stays shut.
   (`bb10root-tools`, `imggen`, `passport_stage3`, `classic_repack.py`)
 - [`bootloaders/`](bootloaders/) — prototype (imggen) bootloader images
 - [`dumps/`](dumps/) — Classic eMMC dumps + build-info parser
+- [`dumps/passport/`](dumps/passport/) — Passport eMMC dumps (SBL1, boot1, os0 IFS)
 - [`resources/`](resources/) — QNX MMC devctl headers
 - [`docs/`](docs/) — cross-device analysis + device/connection reference
 
