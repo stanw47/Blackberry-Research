@@ -1,42 +1,31 @@
 # BlackBerry Research
 
-Security research notes, reverse-engineering artifacts, and tooling for
-BlackBerry 10 (BB10/QNX) and BlackBerry Android-era devices. **This is a
-research aid, not a flashing guide.**
+Reverse-engineering notes, artifacts, and tooling for **BlackBerry 10 (BB10/QNX)**
+and **BlackBerry Android** devices — including the bootloader-unlock / Android
+port effort for the **Classic** (MSM8960) and **Passport** (MSM8974).
 
-> **DISCLAIMER — READ THIS FIRST**
->
-> This repository exists **purely as a research aid**. Nothing here is
-> production code, a supported tool, or an officially endorsed procedure.
->
-> - **Intended use is strictly educational and defensive security research** on
->   devices you legally own and are authorized to test.
-> - **This can permanently brick your device.** Flashing, modifying the eMMC
->   boot partitions (`boot0`/`boot1`), changing `BOOT_WP`/`bbss.insecure`, or
->   writing the `ext_csd` can render a phone unbootable with **no recovery path
->   short of a JTAG/ISP chip-out and rework**.
-> - **Unlocking the bootloader voids your warranty** and may violate the
->   terms of service you agreed to with the carrier or manufacturer.
-> - **Use at your own risk.** The author(s) assume **no liability** for any
->   damage, data loss, bricked devices, or legal consequences arising from use
->   of this material.
-> - Some artifacts reference **third-party proprietary firmware/bootloaders**
->   (BlackBerry, Qualcomm). See [LEGAL.md](LEGAL.md). They are provided only
->   where necessary to document findings, and only for research/compatibility
->   purposes.
+> **Disclaimer — read first.** This repo is a *research aid*, not a flashing
+> guide. Nothing here is production code or an endorsed procedure. Flashing,
+> editing eMMC boot partitions (`boot0`/`boot1`), toggling `BOOT_WP`/`bbss.insecure`,
+> or writing `ext_csd` can **permanently brick** a device with no recovery short
+> of JTAG/ISP chip-out. Everything is at your own risk, for educational /
+> defensive research on devices you own. Third-party firmware/bootloaders
+> appear only where needed to document findings; see [LEGAL.md](LEGAL.md).
 
 ---
 
-## Table of contents
+## Contents
 
 1. [Devices](#devices)
-2. [What was attempted — full synopsis](#what-was-attempted)
-3. [Where things stand per device](#where-things-stand)
-4. [Key technical findings (pinned)](#key-technical-findings)
-5. [Open leads / unexplored paths](#open-leads)
-6. [Why certain approaches do or don't work](#why-doesn-t-it-work)
+2. [Status summary](#status-summary)
+3. [What was attempted](#what-was-attempted)
+4. [Key findings](#key-findings)
+5. [Open leads](#open-leads)
+6. [Why each blocker holds](#why-each-blocker-holds)
 7. [Repository layout](#repository-layout)
-8. [License / legal](#license)
+8. [References](#references)
+9. [Device connection (SSH)](#device-connection-ssh)
+10. [License](#license)
 
 ---
 
@@ -50,340 +39,228 @@ research aid, not a flashing guide.**
 
 ---
 
-## What was attempted
+## Status summary
 
-The overarching goal was **bootloader unlock to run a custom OS (LineageOS)**
-on the Classic/Passport, and **root / persistence** on all three. Everything
-below was tried and is logged in [`notes/`](notes/).
+| Device | Status |
+|---|---|
+| **Classic** | Fully rooted (real uid-0), running 10.3.3.3216, recoverable via Windows `cap.exe` autoloader. Unlock understood but HW-gated. |
+| **Passport** | Fully rooted (real uid-0). Driver forensics complete. Currently **red-blink / non-bootable** after a reboot (see [current device state](#current-device-state)). |
+| **Priv** | Not rooted. Needs a kernel 0-day (none public) or ISP access. |
+
+**The unlock goal** (Classic + Passport): write one byte — `bbss.insecure`
+(build-info field8, `boot0` offset `0x35a98`). That byte is **hardware write-
+protected** (`BOOT_WP[173]=0x04`, bit2 `B_PERM_WP_EN`, *permanent*), which is
+the core problem this repo attacks.
+
+**The Android goal** (Passport): `imggen` payloads are built and validated
+offline (`boot0.img` / `new_user.img`); they are not flashed yet. See
+[#16](#key-findings) and the [AUTOLOADER_GUIDE](docs/AUTOLOADER_GUIDE.md).
+
+### Current device state
+
+- **Classic:** bootable, rooted, recoverable.
+- **Passport:** after session19's driver-forensics reads (no writes) the device
+  was rebooted and entered a **red-blink loop** (the documented stub/payload
+  recovery-path issue, finding #12). Attempted stock + pre-rooted autoloader
+  recovery from Windows now **fails at the "Signature Trailer" step (~13%)**;
+  the device currently blinks `11011` and will not return to BootROM. Recovery
+  options under investigation: EDL lane (`tools/listen_flash.py --armed`,
+  listener-first), or the hardware/ISP route. See
+  [`notes/session19-driver-gate-decode-and-passport-dumps.md`](notes/session19-driver-gate-decode-and-passport-dumps.md).
+
+> **Boot0 write-protect status (2026-09-09).** `BOOT_WP[173] = 0x04`
+> (bit2 `B_PERM_WP_EN`, *permanent*), re-applied every boot. The rimboot
+> software lane is **closed** (sessions 16–18): the WP gate aborts first; a
+> NOP-bypass fails `EROFS` at the driver; the NVRAM-arming power-cycle ritual
+> leaves it `0x04`. Remaining paths: a live-driver raw `cmd6 SWITCH
+> ext_csd[173]=0` thunk (blocked by the `/proc/as` ability regression), or the
+> hardware/EDL lane.
+
+---
+
+## What was attempted
 
 ### BB10 / QNX (Classic + Passport)
 
-1. **Root via the `bb10.root.sx` "getroot" payload** — succeeded. The devices
-   ship a pre-rooted autoloader whose `btool` script runs as root at boot via
-   an `ota_info_pps.sh` symlink.
-2. **Real interactive uid-0** — achieved by adding
-   `/proc/boot/pathtrust !/base/bin/__root` to `btool` (line 31), causing the
-   `__root` setuid helper to become path-trust-"trusted" on every boot.
-3. **Raw eMMC read access without desoldering** — achieved via the setgid
-   "group wrapper" `g_Disk_Drivers` (a procmgr-ability ksh wrapper), which
-   grants the `Disk_Drivers` group and thus read/write to `/dev/emmc/*`.
-4. **eMMC boot/secure partition dumps** — `boot0`, `boot1`, `nvram0`, `dmi0`
-   recovered to `dumps/`.
-5. **`bbss.insecure` flag pinning** — identified as build-info field8 (u32) at
-   `boot0` offset `0x35a98` (currently `0` = secure), by decoding the public
-   `imggen` toolchain.
-6. **Bootloader-write attempt** — blocked. `boot0`/`boot1` are hardware
-   write-protected (`EROFS` even as root); the user area (`uda0`/`os0`/`dmi0`)
-   is writable.
-7. **QNX MMC devctl reverse engineering** — decoded
-   `DCMD_MMCSD_WRITE_PROTECT` (`0xC0201A11`), `DCMD_MMCSD_VUC_CMD`
-   (`0xC0441A16`), `DCMD_MMCSD_CARD_REGISTER` (`0xC0181A14`) and the driver's
-   internal dispatch table by reverse-engineering `sdmmc-rim-msmsdcc`.
-8. **Live CMD6 SWITCH / write-protect toggle attempts** — `WRITE_PROTECT`
-   returns `EIO`; `VUC_CMD` (raw command) returns `ENOTTY` (not implemented).
-9. **`/proc/<pid>/as` memory patching** — established that the driver's
-   `.data`/`.bss` is writable via `dd` on `/proc/as`, but `.text` is read-only
-   ("Server fault on msg pass"), preventing a dispatch-table patch.
-10. **`/dev/mem` physical-RAM audit (Passport)** — ruled out: the char device
-    opens `O_RDWR` but serves a uniform `0xdeadbeef` canary at every address with
-    no data persistence. See session10a.
+1. **Root via `bb10.root.sx` getroot payload** — succeeded (pre-rooted autoloader,
+   `btool` runs as root at boot via an `ota_info_pps.sh` symlink).
+2. **Real interactive uid-0** — added `/proc/boot/pathtrust !/base/bin/__root`
+   to `btool`; `__root` becomes path-trust-trusted every boot.
+3. **Raw eMMC read without desoldering** — the setgid group wrapper
+   `g_Disk_Drivers` grants the `Disk_Drivers` group (read/write to `/dev/emmc/*`).
+4. **eMMC dumps** — `boot0`, `boot1`, `nvram0`, `dmi0` recovered to `dumps/`.
+5. **`bbss.insecure` pinning** — build-info field8 (u32) at `boot0` offset
+   `0x35a98` (currently `0` = secure), decoded from the public `imggen` toolchain.
+6. **Bootloader write attempt** — blocked. `boot0`/`boot1` are HW write-protected
+   (`EROFS` even as root); `uda0`/`os0`/`dmi0` are writable.
+7. **QNX MMC devctl RE** — decoded `DCMD_MMCSD_WRITE_PROTECT` (`0xC0201A11`),
+   `DCMD_MMCSD_VUC_CMD` (`0xC0441A16`), `DCMD_MMCSD_CARD_REGISTER` (`0xC0181A14`)
+   and the internal dispatch table of `sdmmc-rim-msmsdcc`.
+8. **Live CMD6 SWITCH / WP-toggle attempts** — `WRITE_PROTECT` returns `EIO`;
+   `VUC_CMD` returns `ENOTTY` (not implemented).
+9. **`/proc/<pid>/as` memory patching** — `.data`/`.bss` writable, `.text`
+   read-only ("Server fault on msg pass"); cross-process writes return errno 312.
+10. **`/dev/mem` audit (Passport)** — ruled out: opens `O_RDWR` but serves a
+    uniform `0xdeadbeef` canary, no persistence (session10a).
 
 ### Priv (Android)
 
-1. **Kernel source audit** — mapped BlackBerry's in-kernel security stack
-   (grsecurity/PaX, BIDE, Pathtrust) from the published GPL source.
-2. **BIDE / Pathtrust code audit** — full audit of the detection LSM (BIDE) and
-   the enforcement LSM (Pathtrust); found several minor bugs but no
-   unprivileged-privilege-escalation primitive.
-3. **QSEE / trustlet surface audit** — enumerated the `qseecom`-capable
-   SELinux domains and audited `vend_fidodaemon` / token-service.
-4. **Reported bug** — a genuine `fget()`-without-`fput()` reference leak in
-   `security/pathtrust/ioctl.c` (see
-   [`notes/bug-report-pathtrust-fput-leak.md`](notes/bug-report-pathtrust-fput-leak.md)).
+1. **Kernel source audit** — mapped the in-kernel security stack
+   (grsecurity/PaX, BIDE, Pathtrust) from the GPL source.
+2. **BIDE / Pathtrust audit** — no unprivileged escalation primitive found.
+3. **QSEE / trustlet surface audit** — enumerated SELinux domains and audited
+   `vend_fidodaemon` / token-service.
+4. **Reported bug** — a genuine `fget()`-without-`fput()` ref leak in
+   `security/pathtrust/ioctl.c` ([notes/bug-report-pathtrust-fput-leak.md](notes/bug-report-pathtrust-fput-leak.md)).
 
 ---
 
-## Where things stand
+## Key findings
 
-- **Classic / Passport: fully rooted** (real uid-0). The bootloader unlock is
-  **fully understood and pinned to a single byte** — but writing that byte is
-  **hardware-gated** (boot-partition write-protect).
-- **EDL RAM-loader lane is built on Linux (`tools/bblink.py`, a byte-faithful
-  port of the bb10mt USB/loader protocol).** Full `info` readouts (hardware ID,
-  BootROM, partition map, OS metrics, MCT) are proven against the Classic; a
-  hit-or-miss handshake on a wiped Classic triggered a full security wipe, so
-  **EDL experiments are gated** — the lane is only safe on a live/OS device
-  (see notes session14). Critical protocol fact: the device only enters
-  BootROM (`0x0001`) → RAM-loader (`0x8001`) when a host tool is **already
-  polling** for the 0FCA device; plugged-and-powered-off alone just charges.
-- **The Classic's OS flash is recoverable via Windows `cap.exe` autoloaders.**
-  A bb10mt-flashed OS red-blinks, while the **byte-identical carriers** flash
-  fine under Windows — pinning the red-blink to the *stub's flash-time behavior*
-  (install-seal / loader handshake), not to the payload. The device is currently
-  booting 10.3.3.3216 rooted.
-- **Priv: not rooted.** Requires a kernel 0-day (none public) or hardware
-  (ISP) access to write `hlos_unsigned.tkn` to `nvuser` (which is *not*
-  write-protected, unlike boot0 — so the Priv's equivalent step is easier to
-  *write*, but its block devices are SELinux-gated and there is no
-  `g_Disk_Drivers` equivalent).
-- **Passport live driver forensics complete** (session19): gate 0xf182 + WP
-  handler 0x108d0 decoded; per-node `ext` model established; CID live-read
-  confirmed; ext_csd fully uncached; boot0 SBL1 + boot1 blank + os0 IFS
-  dumped. The device subsequently rebooted into red-blink (known stub/payload
-  mismatch); recovery via EDL lane (`tools/bblink.py` + `listen_flash.py`) or
-  hardware.
+*Durable, pinned facts, cross-referenced in [`notes/`](notes/). Numbering is
+stable; new findings append.*
 
-> **Current spike:** a no-desolder **Passport BB10 → Android conversion**
-> (imggen) is now at the flash step. `imggen` payloads are built and validated
-> offline (`boot0.img` / `new_user.img`); the Passport RAM-loader lane is
-> standing by (`tools/bblink.py` + `tools/listen_flash.py`, loader
-> `8D002C0A` @ `0x0DD00000`).
->
-> **Boot0 write-protect status (2026-09-09).** `BOOT_WP[173] = 0x04`
-> (bit2 = `B_PERM_WP_EN`, *permanent*) and is **re-applied / intact after every
-> reboot**. Since session16 the rimboot software lane has been progressively
-> disproven on the live Passport:
-> - the WP gate in `rimboot_update` aborts before any write (session16);
-> - NOP-bypassing that gate still fails with `EROFS` at the driver level — the
->   write is card-refused, and the original bootrom stays intact (session17);
-> - Oleksandr's NVRAM-arming power-cycle ritual was forced via a patched
->   `rimboot_update` (`WP:1 / WP_PROGRESS:1`, clean shutdown), yet after reboot
->   `BOOT_WP[173]` is still `0x04` (session18).
->
-> Remaining software avenue: a live-driver raw `cmd6 SWITCH ext_csd[173]=0`
-> thunk (sessions 9a/10a/18), which the stock driver lacks and which the
-> `/proc/<pid>/as` ability regression currently blocks. Else the hardware/EDL
-> lane (`tools/listen_flash.py --armed`) is the known-good flash path. See
-> [`notes/session16-rimboot-main-flow.md`](notes/session16-rimboot-main-flow.md),
-> [`notes/session17-rimboot-wp-nop-bypass.md`](notes/session17-rimboot-wp-nop-bypass.md),
-> [`notes/session18-nv-powercycle-decisive-negative.md`](notes/session18-nv-powercycle-decisive-negative.md).
+### Root, unlock, and the boot0 wall
 
----
-
-## Key technical findings
-
-These are the durable, pinned facts the research produced (all cross-referenced
-in [`notes/`](notes/)).
-
-1. **Real uid-0 root** on BB10 via the path-trust whitelist trick
+1. **Real uid-0** on BB10 via the path-trust whitelist trick
    (`/proc/boot/pathtrust !/base/bin/__root`).
-2. **`bbss.insecure`** = build-info **field8 (u32)** at **`boot0` offset
-   `0x35a98`** on the Classic. Setting it to `1` enables "insecure device;
-   ignoring SBL auth failure".
-3. **Boot write-protect is *permanent*, not temporary** (Passport, live
-   re-read): `BOOT_WP[173] = 0x04` = bit2 `B_PERM_WP_EN`. `BOOT_CONFIG_PROT[170]
-   = 0x00` and `BOOT_WP_STATUS[174] = 0x0A`. Arming the NVRAM WP bits
-   (`0x2019`) and power-cycling (the Oleksandr ritual) does **not** clear it
-   (session18) — only a live CMD6 to `ext_csd[173]=0` (software thunk) or the
-   hardware/EDL flash lane can get a boot0 write. (Classes/Legacy notes that
-   labeled this "B_PWR_WP_EN / temporary" predate the full 512-byte EXT_CSD
-   decode; the correct bitmap is `0x04` = permanent.)
-4. **QNX MMC devctl constants** (decoded):
-   `DCMD_MMCSD_WRITE_PROTECT = 0xC0201A11`, `DCMD_MMCSD_VUC_CMD = 0xC0441A16`,
-   `DCMD_MMCSD_CARD_REGISTER = 0xC0181A14`; encoding
-   `(sizeof<<16)+(class<<8)+cmd+0xC0000000` with `_DCMD_CAM=0x0C`, `_SIM_MMCSD=3600`.
+2. **`bbss.insecure`** = build-info field8 (u32) at `boot0` offset `0x35a98`
+   (Classic). Setting it to `1` enables "insecure device; ignoring SBL auth
+   failure".
+3. **Boot write-protect is *permanent*** (Passport, live re-read):
+   `BOOT_WP[173] = 0x04` = bit2 `B_PERM_WP_EN`; `BOOT_WP_STATUS[174] = 0x0A`.
+   The NVRAM bits-42/43 power-cycle ritual does **not** clear it (session18).
+   Only a live `CMD6 ext_csd[173]=0` (software thunk) or the hardware/EDL lane
+   can get a boot0 write.
+4. **QNX MMC devctl constants:** `WRITE_PROTECT=0xC0201A11`,
+   `VUC_CMD=0xC0441A16`, `CARD_REGISTER=0xC0181A14`; encoding
+   `(sizeof<<16)+(class<<8)+cmd+0xC0000000` (`_DCMD_CAM=0x0C`, `_SIM_MMCSD=3600`).
 5. **The stock MMC driver already contains** the `CMD6 SWITCH ext_csd[173]`
-   code path (`WRITE_PROTECT → mmc_switch(0xad)`), but the **raw-command
-   passthrough (`VUC_CMD`) is not implemented** (`ENOTTY`) — this is exactly
-   what the private `sdmmc.zip` patch adds (per the upstream author).
-6. **`/proc/<pid>/as` patching**: `.data`/`.bss` writable, `.text` read-only
-   ("Server fault on msg pass"). Cross-process `/proc/<pid>/as` **writes** into
-   the trusted driver return `errno 312` (self-writes succeed) — a trust-boundary
-   wall, not just a DAC/permission question.
-7. **`imggen` + `passport_stage3`** toolchains decoded (public GPL): the
-   prototype bootloader, HWI/GPT generation, and the RPM/PBL debug-mode
-   (`BOOT_PARTITION_SELECT = 0x5D1`) unlock path.
-8. **Oleksandr's raw-MMC interface decoded** (`DCMD_SDMMC_ANY` +
-   `sdmmc_raw_cmd`, 44 B, `FUNC_CLEAR_WP = 0x80004`, `cmd_idx` 0–255). It is
-   *additive*: the stock driver's dispatch table has no such slot, so it returns
-   `ENOTTY`. Re-adding the raw handler is a `.text` patch, which the above
-   trust-boundary findings block. (`DCMD_SDMMC_ANY = 0xC02C0E11` by the public
-   `_SIM_MMCSD=0x0E10` base; on-device MMC dcmds use a RIM-specific `0x1A..`
-   base — see session10a.)
-9. **`/dev/mem` on the Passport is a decoy** — opens `O_RDWR` as root yet returns
-   a uniform `0xdeadbeef` canary for *every* physical address (full-4GB scan:
-   zero ELF headers found), and writes do not persist. No physical-RAM window.
-10. **Priv BIDE/Pathtrust** are detection/enforcement LSMs; BIDE never blocks,
-    Pathtrust can. Both are defensively written; no unprivileged escalation bug.
+   code path (`WRITE_PROTECT → mmc_switch(0xad)`), but the raw-command
+   passthrough (`VUC_CMD`) is **not implemented** (`ENOTTY`).
+6. **`/proc/<pid>/as` patching:** `.data`/`.bss` writable, `.text` read-only;
+   cross-process writes to a trusted driver return errno 312 (trust-boundary wall).
+7. **`imggen` + `passport_stage3`** (public GPL) decoded: prototype bootloader,
+   HWI/GPT generation, and the RPM/PBL debug-mode (`BOOT_PARTITION_SELECT=0x5D1`)
+   unlock path.
+8. **Oleksandr's raw-MMC interface decoded** (`DCMD_SDMMC_ANY` + `sdmmc_raw_cmd`,
+   44 B, `FUNC_CLEAR_WP=0x80004`, `cmd_idx` 0–255). It is *additive*; the stock
+   driver has no such slot → `ENOTTY`. Re-adding it is a `.text` patch, blocked
+   by the trust-boundary findings.
+9. **`/dev/mem` on the Passport is a decoy** — uniform `0xdeadbeef`, no
+   persistence, no physical-RAM window.
+10. **Priv BIDE/Pathtrust** are detection/enforcement LSMs; defensively written,
+    no unprivileged escalation bug.
+
+### The install seal and the red-blink
+
 11. **The 560-byte install-seal contract.** The RAM-loader's `F9 40`
-    (SIGNATURE_TRAILER) seal is what SBL validates to accept an OS install.
-    bb10mt only strips+sends a carrier's last 560 bytes if they begin with
-    `QNXH`; the OS carrier ends in 560 zero bytes, so bb10mt streams the zeros
-    and sends a fake seal. `cap.exe` embeds the real 560-byte seal as a PEM
-    `SIGNATURE BLOCK` (base64 w/ `Version:` header; decodes to exactly 560 B of
-    `0xFF` EMSA-PKCS#1 padding + `00010001` RSA records + `1F2DC8D7` footer).
-12. **Red-blink root cause is the stub, not the payload.** Flashing the
-    *byte-identical* OS/radio carriers: bb10mt → red-blink; Windows `cap.exe` →
-    boots. Replacing the OS tail-560 with cap's real block via bb10mt still
-    red-blinked — the stub does more flash-time state (secure-boot exchange /
-    in-stream signature) than just `F9`. Capturing cap.exe-vs-bb10mt USB traffic
-    on identical carriers is now the highest-value experiment.
-13. **Classic is MSM8960 (SBL2→SBL1 boot chain); imggen is MSM8974-only.**
-    Real Classic `boot0.img` GPT = `SBL2` (LBA 34-521) + `SBL1` (LBA 522-719),
-    PM8921/22 PMIC. imggen's hwids are all `0x2c` family byte (Passport/oslo);
-    Classic is `0x27` (`0x9700270a`). Its bundled MSM8974 loaders **cannot**
-    boot an MSM8960. Fundamental SoC mismatch → no Classic Android via imggen.
-14. **NVRAM unlock flags (bits 42/43 ⇒ byte5 `0x0C` in NV record `0x2019`)
-    persist across reboot** (writes survive a full OS power cycle; read-back
-    unchanged: `00 08 00 00 00 0c …`). They gate the **official updater's
-    boot0-write path**, not the running OS block layer (`pwrite /dev/emmc/boot0`
-    stays `EROFS`) — see notes session15.
-15. **Device flash entry is listener-first.** A powered-off/plugged BlackBerry
-    only charges (not enumerates); it enters BootROM (`0x0001`) → RAM-loader
-    (`0x8001`) only when a host tool is already polling for VID `0x0FCA`. A
-    live OS device enumerates PID `0x8017` and the loader session must be
-    started with the device OFF (see notes session10a, 14, 15).
-16. **Passport no-desolder conversion is the viable Android path.** Passport =
-    MSM8974 = imggen's exact target; we have the rooted Passport autoloader,
-    the `8D002C0A` RAM-loader lane (`tools/bblink.py` + `tools/listen_flash.py`),
-    and proven OS-side eMMC dumps. The oleksandr NV unlock (record `0x2019`
-    bits 42/43) is set + persists and `imggen` payloads are built/validated
-    offline; remaining gate = a read-only loader session to map the Boot0
-    region, then the loader's raw boot-region write op (the QCFM path has no
-    boot0 container type — see notes session15).
-17. **The rimboot (`rimboot_update`) software lane is closed on the live
-    Passport** (sessions 16–18). `BOOT_WP[173] = 0x04` is bit2
-    (`B_PERM_WP_EN`); the tool's own WP gate aborts at `rc=1` before any write
-    (session16). NOP-bypassing that gate still fails with `EROFS: Read-only
-    file system` at the driver/card level — `ORIGINAL BOOTROM IS STILL INTACT`
-    (session17). Forcing the tool's `r0==1` power-on-protected branch arms the
-    NV bits (`WP:1 WP_PROGRESS:1`) and cleanly shuts down, but a full power
-    cycle leaves `BOOT_WP[173]` at `0x04` (session18) — the NVRAM ritual does
-    not clear a permanent WP bit. No userland path reaches a `cmd6
-    SWITCH ext_csd[173]=0` on the stock driver (the raw handler is absent, and
-    `/proc/<pid>/as` has been ability-gated since session11). The EDL/RAM-loader
-    lane (hardware-adjacent) is the remaining known-good boot0 write path.
+    (SIGNATURE_TRAILER) is what SBL validates to accept an OS install. bb10mt
+    only strips+sends a carrier's last 560 bytes if they begin with `QNXH`; the
+    OS carrier ends in 560 zero bytes, so bb10mt streams zeros + sends a fake
+    seal. `cap.exe` embeds the real 560-byte seal as a PEM `SIGNATURE BLOCK`
+    (decodes to `0xFF` EMSA-PKCS#1 padding + RSA records + `1F2DC8D7` footer).
+12. **Red-blink root cause is the stub, not the payload.** Byte-identical
+    OS/radio carriers: bb10mt → red-blink; Windows `cap.exe` → boots. Even the
+    real 560-byte block via bb10mt red-blinks — cap.exe does more flash-time
+    state than just `F9`. Capturing cap.exe-vs-bb10mt USB traffic is the
+    highest-value experiment.
+13. **Classic is MSM8960 (SBL2→SBL1); imggen is MSM8974-only.** Classic
+    `boot0.img` GPT = `SBL2`+`SBL1`; imggen hwids are all `0x2c` (Passport/oslo);
+    Classic is `0x27`. Bundled MSM8974 loaders can't boot MSM8960. No Classic
+    Android via imggen.
+14. **NVRAM unlock flags** (bits 42/43 ⇒ byte5 `0x0C` in NV record `0x2019`)
+    persist across reboot. They gate the **official updater's boot0-write path**,
+    not the running OS block layer (`pwrite /dev/emmc/boot0` stays `EROFS`).
+15. **Device flash entry is listener-first.** Powered-off+plugged only charges;
+    the device enters BootROM (`0x0001`) → RAM-loader (`0x8001`) only when a
+    host tool is already polling VID `0x0FCA`. A live OS device enumerates as
+    PID `0x8017`; loader sessions start with the device OFF.
 
-18. **MMC driver gate 0xF182 and WP handler 0x108D0 fully decoded** (session19).
-    The gate at `base+0xf182` (runtime `0x100e2182`) is the common entry for
-    `WRITE_PROTECT` (`0xC0201A11`). It requires: (1) `[ext+4].bit0 == 1`
-    (global "WP allowed" flag in the per-open `ext` structure), and
-    (2) `[ext + idx + 0x1f8] != 0` (slot "attached" flag), where
-    `idx = msg[0xa]*0x2c8 + msg[0xb]*0x58` (target/lun from devctl header
-    bytes 10/11). The WP handler (`0x108d0`, runtime `0x100e38d0`) computes
-    the same `idx`, calls the gate, then requires `[ext+0x24] == 1` (u16)
-    before calling the `mmc_switch` worker (`0x100d4`) with the mode-table
-    byte (`0->0x1d, 1(BOOT_WP)->0x1c, 2->0x1e, 3->0x1f`).
+### Passport driver forensics (session19)
 
-19. **`ext` is per-open-node, not a single global** (session19). Identical
-    `WRITE_PROTECT` probes on `/dev/emmc/user0` (rc=0) and `/dev/emmc/boot1`
-    (rc=5/EIO) use the same payload (`lba=0 → idx=0`) yet diverge. The
-    difference is the `ext = [ctx+8]` pointer itself: each device node open
-    gets its own `ctx` with a distinct `ext`. User0's ext has `[ext+4].bit0=1`
-    and `[ext+0x1f8]!=0`; boot1's ext lacks one or both. The slot-attached
-    flags are per-open-context.
-
-20. **CID is live-read, not cached** (session19). All three partitions
-    (boot0, boot1, user0) return identical CID
-    `00 91 b2 63 55 93 00 34 45 47 32 33 30 00 01 11` via
-    `DCMD_MMCSD_CARD_REGISTER`; a 16-byte pattern scan of all writable RAM
-    (heap1/2, module data, anon spans) finds zero copies.
-
-21. **No ext_csd cache anywhere** (session19). Exact 512-byte signature scan
-    + structural anchor scan (`[0xAA]=00, [0xAD]=04, [0xAE]=0A`) across all
-    writable regions (heap1/2, module data m1/m2/m3, all anon spans an0–an6)
-    yields zero hits. The driver does not cache the 512-byte ext_csd blob.
-
-22. **Passport `boot0` contains SBL1 (1 MiB), `boot1` is blank** (session19).
-    Full 4 MiB `boot0` dump: 1 MiB nonzero (0x0..0x100000) = SBL1 preloader.
-    EFI PART at 0x200 is a minimal decoy; single GPT entry "BootROM" (LBA
-    34–511). SBL1 strings: "Build info", "Loading SBL image", "SBL1
-    decompression failed!", "Jump to SBL1", "DDR training occurred".
-    `boot1` is all zeros (~4 KiB noise). `os0` holds the QNX IFS (v1.2b boot
-    loader + startup). Dumps in `dumps/passport/`.
+16. **Passport no-desolder conversion is the viable Android path.** MSM8974 =
+    imggen's exact target; we have the rooted Passport autoloader, the
+    `8D002C0A` RAM-loader lane, proven OS-side eMMC dumps, and the persisted
+    NV unlock. Remaining gate = read-only loader session to map the Boot0
+    region, then the loader's raw boot-region write op.
+17. **The rimboot (`rimboot_update`) software lane is closed** (sessions 16–18):
+    own gate aborts `rc=1`; NOP-bypass fails `EROFS` (original bootrom intact);
+    forced `r0==1` branch arms NV bits + clean shutdown, yet post-cycle
+    `BOOT_WP[173]` is still `0x04`.
+18. **MMC driver gate `0xF182` and WP handler `0x108D0` fully decoded.** Gate:
+    `[ext+4].bit0==1` and `[ext + idx + 0x1f8] != 0`, where
+    `idx = msg[0xa]*0x2c8 + msg[0xb]*0x58`. Handler computes `idx`, calls gate,
+    requires `[ext+0x24]==1`, then calls the `mmc_switch` worker with the
+    mode-table byte (`0->0x1d, 1(BOOT_WP)->0x1c, 2->0x1e, 3->0x1f`).
+19. **`ext` is per-open-node, not global.** Identical `WRITE_PROTECT` probes on
+    `/dev/emmc/user0` (rc=0) and `/dev/emmc/boot1` (rc=5/EIO) use the same
+    payload (`lba=0 → idx=0`) yet diverge — the difference is the `ext=[ctx+8]`
+    per-open context. User0's ext has `[ext+4].bit0=1` and `[ext+0x1f8]!=0`;
+    boot1's lacks one or both.
+20. **CID is live-read, not cached.** All three partitions return the same CID
+    `00 91 b2 63 55 93 00 34 45 47 32 33 30 00 01 11`; zero 16-byte hits in all
+    writable RAM dumps.
+21. **No 512-byte ext_csd cache anywhere.** Exact-signature + anchor scan
+    (`[0xAA]=00, [0xAD]=04, [0xAE]=0A`) across heap, module data, and all anon
+    spans → 0 hits.
+22. **Passport `boot0` holds SBL1 (1 MiB); `boot1` is blank.** EFI PART at
+    `0x200` is a minimal decoy (single "BootROM" entry, LBA 34–511); SBL1
+    strings + 3 ELF magics confirmed. `os0` holds the QNX IFS. Dumps in
+    `dumps/passport/`.
 
 ---
 
 ## Open leads
 
-These are the paths that remain technically open but unverified/unexplored, in
-rough order of promise.
+*Technically open but unverified, roughly in promise order.*
 
-1. **Clearing `B_PWR_WP_EN` via the right CMD6 sequence.** The standard
-   `WRITE_PROTECT` handler sends `0x03AD0001` (write `ext_csd[173] = 0`) but the
-   card returns `SWITCH_ERROR`. Likely requires a vendor/ordering sequence the
-   stock handler can't express — e.g. selecting `PARTITION_ACCESS` (`ext_csd[179]`)
-   to `boot0` first, or writing `B_PERM_WP_DIS` before `B_PWR_WP_EN`. Needs the
-   **raw** command channel (`VUC_CMD` / `DCMD_SDMMC_ANY`), which is missing.
-
-2. **Re-add the raw-command passthrough in the driver** (equivalent of
-   Oleksandr's `FUNC_CLEAR_WP`). `.text` is read-only via `/proc/as`, so a direct
-   dispatch-table patch is blocked — but the driver's `.data`/`.bss` is **writable**,
-   so the live resmgr `dispatch_t` (in heap) or a `.data` function-pointer table
-   could route a devctl to a `.data`-resident Thumb thunk that calls the existing
-   `mmc_switch` (`0x76c0`) with `ext_csd[173]=0`. **Session19 caveat**: the
-   `ext` structure is per-open-node, so a global `.data` patch would need to
-   target the `ext` used by the boot1 open context (or patch the open routine
-   to set `[ext+4].bit0` and `[ext+0x1f8]` at allocation time). Unexplored; the
-   single most promising no-desolder lever.
-
-3. **Driver thread hijack** via `/proc/<pid>/ctl` + debug API
-   (`DCMD_PROC_STOP` / `SETGREG`) to drive `mmc_switch` directly. Complex,
-   unexplored. (Note: `/proc/<pid>/ctl` is *absent* on the Passport, so this is
-   Classic-side only, and still needs the debug ability.)
-
-4. **ISP (no-desolder) or desolder** — the hardware route Blanka used. This is
-   the known-good fallback and the only confirmed path that defeats the
-   boot-partition write-protect.
-
-5. **Priv root via the `kgsl`/QSEE surface** — the community-shared
-   `kgsl-exploit` repository may be relevant to the Priv's Android kernel
-   (MSM8992), though it is an Android-era driver, not BB10.
-
-6. **Priv `nvuser` token write** — the Priv's unlock token lives in `nvuser`
-   (not HW write-protected); reaching the raw partition (ISP or root) would let
-   `hlos_unsigned.tkn` be written.
-
-7. **Raw EDL hardware-boot-partition writer.** `bb10mt` is QCFM-only and never
-   targets `boot0`; `tools/bblink.py` now implements the full raw sector-writer
-   primitives (`F7/F8`, `EE`, `cread`, `preflash`, `complete`, `reboot`) plus
-   MCT save (`info -o/--out`) on the same lane. Remaining work: map the live
-   Boot0 MCT entry (kind `$2B`) via a read-only session and craft the
-   boot0-targeted write for `boot0`/`new_user` on the Passport. Raw EDL on a
-   wiped unit can trigger a security wipe, so sessions are listener-first on a
-   live device (notes session14/15).
-
-8. **Capture cap.exe-vs-bb10mt USB delta.** Both flash the *identical* carriers,
-   yet Windows boots and Linux red-blinks. A packet-level diff of the two flash
-   sessions (loader commands, seal/hash exchanges, PreFlash byte) pins the stub's
-   injection — then bb10mt (or a custom autoloader) can emulate it, enabling
-   custom-image flashing on the same lane.
+1. **Raw `cmd6 SWITCH ext_csd[173]=0` thunk** — the driver's `.data`/`.bss` is
+   writable, so a resmgr `dispatch_t` or `.data` function-pointer table could
+   route a devctl to a `.data`-resident Thumb thunk calling the existing
+   `mmc_switch` (`0x76c0`). **Session19 caveat:** `ext` is per-open-node, so a
+   global patch must target the `ext` used by the boot1 open context (or patch
+   the open routine to set `[ext+4].bit0` / `[ext+0x1f8]` at allocation).
+   The single most promising no-desolder lever.
+2. **Driver thread hijack** via `/proc/<pid>/ctl` + debug API
+   (`DCMD_PROC_STOP`/`SETGREG`) to drive `mmc_switch`. Absent on the Passport
+   (Classic-side only), still needs the debug ability.
+3. **ISP (no-desolder) or desolder** — the only *confirmed* path that defeats
+   the boot-partition WP.
+4. **Priv: `kgsl`/QSEE surface** — community `kgsl-exploit` may map to the
+   MSM8992 kernel.
+5. **Priv `nvuser` token write** — `hlos_unsigned.tkn` lives in `nvuser`
+   (not HW WP); reaching the raw partition (ISP or root) enables it.
+6. **Raw EDL boot-partition writer** — `bblink.py` implements `F7/F8`, `EE`,
+   `cread`, `preflash`, `complete`, `reboot` + MCT save. Remaining work: map the
+   live Boot0 MCT entry (kind `$2B`) read-only, craft the boot0-targeted write.
+   Wiped units can trigger a security wipe → listener-first on a *live* device.
+7. **Capture cap.exe-vs-bb10mt USB delta** — pin the stub's injection so custom
+   images can flash on the same lane.
 
 ---
 
-## Why doesn't it work? (the honest blockers)
+## Why each blocker holds
 
-This is the "so what's actually stopping us" summary — the reasons each
-half-open door stays shut.
-
-1. **`boot0`/`boot1` are controller-level write-protected.** They return
-   `EROFS`/`EIO` even as uid-0. This is `BOOT_WP` re-applied by SBL1 every boot,
-   *before* the OS runs, so there is no OS-reachable write window by default.
-2. **The MMC driver's raw-command ioctl is absent.** `DCMD_MMCSD_VUC_CMD`
-   (`0xC0441A16`) returns `ENOTTY` — BlackBerry stripped the "execute arbitrary
-   MMC command" path. Re-adding it means patching `.text`, which is read-only
-   via `/proc/as`.
-3. **`WRITE_PROTECT` reaches but fails at the switch.** The driver *does* send
-   `CMD6 SWITCH ext_csd[173]=0`, but the eMMC rejects it (`SWITCH_ERROR`), and
-   `BOOT_WP[173]` is bit2 `B_PERM_WP_EN` (permanent) — not a power-on flag. The
-   NVRAM-arming power-cycle ritual also leaves it at `0x04` (session18).
-4. **`passport_stage3` (PBL debug mode) is not OS-reachable.** It requires the
-   PBL to already be in download/debug (Sahara/EDL-like) mode, which is
-   hardware/key gated — same gate as EDL. Not a software path from the running
-   OS.
-5. **`mmcsdpub` is a publisher, not a toggler.** It only reads `DCMD_MMCSD_DEVINFO`
-   and publishes PPS fields; it can't read or clear boot0 write-protect state.
-6. **`/dev/mem` is a canary decoy, not physical RAM.** It opens `O_RDWR` as root
-   but serves uniform `0xdeadbeef` for every address (and writes don't persist),
-   so there is no physical-memory bypass around the `.text` read-only wall.
-7. **The raw-command handler must be *added*, not *triggered*.** Oleksandr's
-   answer + RE show `DCMD_SDMMC_ANY`/`VUC_CMD` has no dispatch entry in the stock
-   driver (`ENOTTY`); no dcmd constant can drive a raw CMD6 on an unpatched
-   driver. Re-adding it requires a `.text` write, which is blocked by #6, the
-   errno-312 async trust wall, and the immutable `/proc/boot` ramfs.
-8. **The Priv's kernel is heavily hardened** (grsecurity/PaX + BIDE + Pathtrust)
-   and the shipping `AAW068` source was never released (closest is `AAO474`),
-   so weaponizing a Priv kernel bug means finding one blind.
+1. **`boot0`/`boot1` are controller-level WP.** `EROFS`/`EIO` even as uid-0;
+   WP re-applied by SBL1 each boot before the OS runs.
+2. **The MMC driver's raw-command ioctl is absent.** `VUC_CMD` → `ENOTTY`;
+   re-adding it means patching `.text`, which is read-only via `/proc/as`.
+3. **`WRITE_PROTECT` reaches but fails at the switch.** The card rejects
+   `CMD6 SWITCH ext_csd[173]=0`; the bit is `B_PERM_WP_EN` (permanent), and the
+   power-cycle ritual doesn't clear it.
+4. **`passport_stage3` (PBL debug mode) is not OS-reachable** — needs PBL in
+   Sahara/EDL-like mode, hardware/key gated.
+5. **`mmcsdpub` is a publisher, not a toggler.** Reads `DCMD_MMCSD_DEVINFO`,
+   publishes PPS fields; can't touch boot WP state.
+6. **`/dev/mem` is a canary decoy.** No physical-memory window around the
+   `.text` read-only wall.
+7. **The raw-command handler must be *added*, not *triggered*.** No dcmd drives
+   a raw CMD6 on the unpatched driver; re-adding is a `.text` write blocked by
+   errno-312 + immutable `/proc/boot`.
+8. **The Priv's kernel is heavily hardened.** grsecurity/PaX + BIDE + Pathtrust;
+   shipping `AAW068` source never released (closest `AAO474`) — finding a bug =
+   blind.
 
 ---
 
@@ -391,52 +268,49 @@ half-open door stays shut.
 
 - [`notes/`](notes/) — session-by-session research notes + bug report
 - [`analysis/`](analysis/) — sepolicy parsers, disassembly, trustlet JSON
-- [`tools/`](tools/) — helper scripts and third-party tool sources
-  (`bb10root-tools`, `imggen`, `passport_stage3`, `classic_repack.py`)
+- [`tools/`](tools/) — helper scripts + third-party tool sources
+  (`bb10root-tools`, `imggen`, `passport_stage3`, `bblink.py`,
+  `listen_flash.py`, `classic_repack.py`, …)
 - [`bootloaders/`](bootloaders/) — prototype (imggen) bootloader images
 - [`dumps/`](dumps/) — Classic eMMC dumps + build-info parser
 - [`dumps/passport/`](dumps/passport/) — Passport eMMC dumps (SBL1, boot1, os0 IFS)
 - [`resources/`](resources/) — QNX MMC devctl headers
-- [`docs/`](docs/) — cross-device analysis + device/connection reference
+- [`docs/`](docs/) — cross-device analysis, device/connection reference,
+  [AUTOLOADER_GUIDE.md](docs/AUTOLOADER_GUIDE.md)
 
-## References / cited sources
+---
 
-External sources cited across the research. All are publicly accessible; none of
-the linked tooling/firmware is re-hosted in this repository (see [LEGAL.md](LEGAL.md)).
+## References
+
+All public and not re-hosted here (see [LEGAL.md](LEGAL.md)).
 
 | Source | URL | Relevance |
 |---|---|---|
-| **balika011 — Passport Conversion (BB10 → Android)** | https://balika011.hu/blackberry/guides/passport/conversion.php | The canonical end-to-end unlock: desolder eMMC → `imggen` boot0/user → `ext_csd[179]=0x08` → fastboot → recovery → `adb sideload` LineageOS. Also hosts the LineageOS/recovery images. **Now under active reproduction no-desolder via the Passport RAM-loader lane (session15).** |
-| **bb10.root.sx (Oleksandr)** | https://bb10.root.sx | BB10 root + security notes: RAM-loader `0xF7`/`0xC040` signature-flag mechanics, `install_apk`/`andrB` bar bypass, RCFS/qnx6 sysdata research, real uid-0 via `ota_info_pps.sh` symlink, and the (private) `sdmmc.zip` raw-MMC patch description. |
-| **michioxd — skip initial setup in BB QNX** | https://blog.michioxd.ch/blog/02-how-to-completely-skip-initial-setup-in-bbqnx/ | Sachesi + bb10mt + DBBT/cap.exe workflow to unpack/repack a `.signed` QCFM and rebuild an autoloader — the *user/OS* partition modification path (root-and-customize), not a bootloader unlock. |
-| **BBAndroids/imggen** | https://github.com/BBAndroids/imggen | Public (GPL-2.0) boot-image generator: `boot_gpt_insecure.bin`/`boot_gpt_secure.bin`, `stage1/2/3.mbn`, `sbl1.mbn`, `aboot.mbn`, `bbss.mbn` — the prototype bootloader + `bbss.insecure` keystone. |
-| **BBAndroids/passport_stage3** | https://github.com/BBAndroids/passport_stage3 | "Passport secure boot exploit" — MSM8974AA RPM→PBL debug-mode (`BOOT_PARTITION_SELECT=0x5D1`) path; hardware/key gated from a running OS. |
+| **balika011 — Passport conversion** | https://balika011.hu/blackberry/guides/passport/conversion.php | Canonical end-to-end unlock: desolder eMMC → `imggen` boot0/user → `ext_csd[179]=0x08` → fastboot → recovery → `adb sideload` LineageOS. Under active reproduction no-desolder via the RAM-loader lane. |
+| **bb10.root.sx (Oleksandr)** | https://bb10.root.sx | BB10 root + security notes: RAM-loader `0xF7`/`0xC040` signature-flag mechanics, RCFS/qnx6 sysdata research, real uid-0, and the private `sdmmc.zip` raw-MMC patch. |
+| **michioxd — skip initial setup** | https://blog.michioxd.ch/blog/02-how-to-completely-skip-initial-setup-in-bbqnx/ | Sachesi + bb10mt + DBBT/cap.exe workflow to unpack/repack `.signed` QCFM + rebuild an autoloader (user/OS partition path). |
+| **BBAndroids/imggen** | https://github.com/BBAndroids/imggen | Public (GPL-2.0) boot-image generator: prototype bootloader + `bbss.insecure` keystone. |
+| **BBAndroids/passport_stage3** | https://github.com/BBAndroids/passport_stage3 | "Passport secure boot exploit" — MSM8974AA RPM→PBL debug-mode (`BOOT_PARTITION_SELECT=0x5D1`) path. |
 
-### Community tooling links (referenced in notes, not re-hosted)
+**Community tooling:** [Sachesi](https://github.com/xsacha/Sachesi) ·
+[bb10mt](https://bb10.root.sx/downloads/bb10mt/bb10mt.zip) ·
+[cap.exe / BlackberrySystemPacker](https://github.com/FerreiraPablo/BlackberrySystemPacker) ·
+[QNX Security Whitepaper (MWR)](https://github.com/alexplaskett/Publications)
 
-- **Sachesi** — https://github.com/xsacha/Sachesi (extract `.signed` from autoloaders)
-- **bb10mt** (BlackBerry 10 MultiTool) — https://bb10.root.sx/downloads/bb10mt/bb10mt.zip
-- **cap.exe (FerreiraPablo BlackberrySystemPacker)** — https://github.com/FerreiraPablo/BlackberrySystemPacker
-- **QNX Security Whitepaper (Alex Plaskett, MWR)** — https://github.com/alexplaskett/Publications (mwri-qnx-security-whitepaper-2016-03-14.pdf)
+---
 
 ## Device connection (SSH)
 
-Connecting to the Classic requires the RSA key **every session** — there is no
-password path and no session reuse. See [`docs/ssh-connection-linux.md`](docs/ssh-connection-linux.md)
-for the complete Linux (ParrotOS/Debian) connection guide: Dev Mode enablement,
-fresh 4096-bit key generation, `blackberry-connect` tunnel, paramiko SSH with
-QNX algorithm fixes, and troubleshooting.
+Connecting requires the RSA key **every session**. See
+[`docs/ssh-connection-linux.md`](docs/ssh-connection-linux.md) for the full
+Linux guide (Dev Mode, fresh keygen, `blackberry-connect` tunnel, paramiko with
+QNX algorithm fixes) and [`notes/session7w-connect-ritual.md`](notes/session7w-connect-ritual.md).
 
-See [`notes/session7w-connect-ritual.md`](notes/session7w-connect-ritual.md)
-for the required ritual, why `Connection refused` happens, and the quick
-reference (`ping` → check port 22 listener → `python3 connect_now.py`).
+The private key (`id_rsa`) is gitignored — never commit it.
 
-The private key (`id_rsa`) is a live credential and is gitignored — never
-commit it. `connect_now.py` / `reconnect.py` at the repo root document the
-paramiko settings (`server_sig_algs=False`, `disable rsa-sha2` pubkeys) needed
-to talk to QNX sshd.
+---
 
 ## License
 
-Research notes and original scripts are provided as-is for educational
-purposes; third-party code retains its own license. See [LEGAL.md](LEGAL.md).
+Research notes and original scripts are available for educational purposes;
+third-party code retains its own license. See [LEGAL.md](LEGAL.md).
