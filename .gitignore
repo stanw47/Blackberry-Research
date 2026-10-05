@@ -48,3 +48,13 @@ NON-HLOS.bin
 
 # Local archive of the pre-split monorepo content (kept on disk, not pushed)
 /archive/
+
+# internal planning docs must never be committed
+FILTER-MAP.md
+*-MAP.md
+/restructure/
+
+# meta/planning docs live outside the repos
+STANDARDS.md
+FILTER-MAP.md
+*-MAP.md

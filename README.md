@@ -111,7 +111,7 @@ reference these rather than copying.
 | `devmaps/` | collected device maps (JSON) |
 | `toolchain/` | shared scripts |
 | `templates/` | the standard device-repo + note templates |
-| `docs/` | [STANDARDS.md](docs/STANDARDS.md) (the format standard), connection guide, BB10 reference |
+| `docs/` | [STANDARDS.md](templates/) (the format standard), connection guide, BB10 reference |
 | `devices.yml` | machine-readable collection index |
 | `STATUS.md` | master status + changelog of major updates |
 
@@ -119,7 +119,7 @@ reference these rather than copying.
 
 ## How the collection is maintained
 
-- **Standard:** [`docs/STANDARDS.md`](docs/STANDARDS.md) — repo layout, README
+- **Standard:** [`templates/`](templates/) — repo layout, README
   structure, note format, devmap schema, big-binary policy.
 - **Device repos** stay **private** until a write-up is ready, then flip public.
 - **This hub never deletes device work** — content is copied to the device repo;

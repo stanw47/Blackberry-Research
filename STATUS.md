@@ -34,7 +34,7 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
 
 - **2026-10-05** — Multi-repo split begun. Hub + per-device repos
   (Classic, Passport, Priv, Q10) scaffolded to the new standard; KEY2/KEYone/9930
-  already existed. Standards + templates added (`docs/STANDARDS.md`).
+  already existed. Standards + templates added (`templates/`).
 - **2026-10-04** — Classic network audit: rooted autoloader + a re-signed
   Telegram APK cleared of the "phone-home" claim (see Classic repo `recon/`).
 - **2026-10-03** — KEYone: KGSL/IOMMU kernel bug confirmed reachable from shell.
