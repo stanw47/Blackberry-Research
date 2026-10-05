@@ -6,7 +6,7 @@ collection:
   hub: https://github.com/stanw47/Blackberry-Research
   model: "hub + one repo per device"
   visibility_default: private
-  standard: docs/STANDARDS.md
+  standard: templates/
   devmap_standard: devmap/STANDARD.md
 
 devices:

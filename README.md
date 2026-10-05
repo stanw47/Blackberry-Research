@@ -111,7 +111,7 @@ reference these rather than copying.
 | `devmaps/` | collected device maps (JSON) |
 | `toolchain/` | shared scripts |
 | `templates/` | the standard device-repo + note templates |
-| `docs/` | [STANDARDS.md](templates/) (the format standard), connection guide, BB10 reference |
+| `docs/` | the SSH connection guide + BB10 reference |
 | `devices.yml` | machine-readable collection index |
 | `STATUS.md` | master status + changelog of major updates |
 
