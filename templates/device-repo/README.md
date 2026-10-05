@@ -3,58 +3,76 @@
 > <ONE-LINE DESCRIPTION>
 >
 > Part of the **[Blackberry-Research](https://github.com/stanw47/Blackberry-Research)**
-> collection. See the hub for cross-device mechanisms and the shared
-> [devmap standard](https://github.com/stanw47/Blackberry-Research/blob/main/devmap/STANDARD.md).
+> collection · [Williamson Security Solutions](https://williamsonsecuritysolutions.com)
 
 ---
 
 ## Disclaimer
 
-> **Research aid, not a flashing guide.** Modifying bootloaders, eMMC boot
-> partitions (`boot0`/`boot1`), or firmware can **permanently brick** a device
-> with no recovery short of JTAG/ISP chip-out. Everything here is for
-> educational / defensive research on devices the author owns. Proceed at your
-> own risk.
+> **Research aid, not a flashing guide.** <device-specific brick warning>. For
+> educational / defensive research on devices the author owns. **At your own risk.**
 
 ---
 
-## Status
+## Device Details
 
 | Field | Value |
 |---|---|
-| Device / model | BlackBerry <DEVICE> (<MODEL>) |
-| SoC | <SoC> |
-| OS / build | <OS / build> |
-| Bootloader | <locked / unlocked / prototype> |
-| Root | <none / uid-0 / partial> |
-| Access levels | <L0..L5 reached> |
-| Status | <one-line: what works, what's blocked> |
-
-**Current state:** <2–3 sentences>.
-
----
-
-## TL;DR
-
-- <key finding 1>
-- <key finding 2>
-- <key finding 3>
+| Model | <e.g. BBB100-3 (Sprint, unlocked)> |
+| Codename | <e.g. bbb100 / mercury> |
+| SoC | <e.g. MSM8953> |
+| OS / software | <e.g. Android 7.1.1> |
+| Current build | <e.g. NMF26F / ABL766> |
+| Previous builds | <if applicable> |
+| Carrier / unlock | <e.g. Sprint (CDMA); device is carrier-unlocked> |
+| SIM | <single / dual> |
 
 ---
 
-## Key findings
+## Current Status
 
-*Numbered, stable — never renumber; append new findings. Each links to detail.*
-
-1. **<title>** — <one line>. → [`notes/NN-slug.md`](notes/NN-slug.md)
-2. **<title>** — <one line>. → [`docs/<doc>.md`](docs/<doc>.md)
+<One clear paragraph: what works, what's blocked, and the single most important
+open question.>
 
 ---
 
-## How to connect
+## Completed
 
-<The access ritual for this device: transport, auth, tooling. Link the hub
-toolchain where shared.>
+<Workstreams / phases finished.>
+
+- <item>
+
+## Achieved
+
+<Verifiable headline results — the wins.>
+
+- <result>
+
+## In Progress
+
+<Active work, with the immediate blocker.>
+
+- <item>
+
+## Failed
+
+<Negative results and dead ends — first-class, with *why*. This saves the next
+researcher.>
+
+- <what was tried> — <why it failed>
+
+## Future Plans
+
+<Next concrete steps.>
+
+- <item>
+
+---
+
+## Community Activity
+
+<How far the community has taken research/modding for THIS device: tools,
+unlocks, ROMs, forums, prior art, and what remains unsolved.>
 
 ---
 
@@ -63,7 +81,7 @@ toolchain where shared.>
 | Path | Contents |
 |---|---|
 | `notes/` | chronological session notes |
-| `docs/` | polished write-ups & guides |
+| `docs/` | write-ups & guides |
 | `devmaps/` | device maps (schema v1.0) |
 | `recon/` | raw captures (props, partitions, logs) |
 | `tools/` | device-specific scripts |
@@ -74,19 +92,21 @@ toolchain where shared.>
 ## Related repos
 
 - **Hub:** [Blackberry-Research](https://github.com/stanw47/Blackberry-Research)
-- <sibling device repos>
+- <sibling devices>
 
 ---
 
-## References
+## Citations & Acknowledgements
 
 | Source | URL | Relevance |
 |---|---|---|
-| <name> | <url> | <why> |
+| <name / author> | <url> | <why> |
+
+<Thanks to researchers, tool authors, and community members.>
 
 ---
 
 ## License
 
 Research notes and original scripts are provided for educational purposes;
-third-party code retains its own license.
+third-party code retains its own license. See the hub's `LEGAL.md`.
