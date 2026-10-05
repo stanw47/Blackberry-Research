@@ -22,13 +22,13 @@
 
 | Device | Model | SoC | OS | Root | Unlock | Repo |
 |---|---|---|---|---|---|---|
-| **Classic** | SQC100 (Q20) | MSM8960 | BB10/QNX | ✅ uid-0 | ⛔ HW-gated | [→](https://github.com/stanw47/Blackberry-Classic-Research) |
-| **Passport** | SQW100 | MSM8974AA | BB10/QNX | ✅ (bricked) | ⛔ HW-gated | [→](https://github.com/stanw47/Blackberry-Passport-Research) |
-| **Q10** *(prototype)* | Q10 | MSM8960 | BB10/QNX | — | ? | [→](https://github.com/stanw47/Blackberry-Q10-Research) |
-| **Priv** | STV100-1 | MSM8992 | Android 6 | ⛔ | ⛔ | [→](https://github.com/stanw47/Blackberry-Priv-Research) |
-| **KEYone** | BBB100-3 (Sprint) | MSM8953 | Android 7.1.1 | ⛔ | ⛔ | [→](https://github.com/stanw47/Blackberry-KeyOne-Research) |
-| **KEY2** | BBF100-6 (India/APAC, dual-SIM) | SDM660 | Android→LOS 22.2 | ✅ | ✅ | [→](https://github.com/stanw47/Blackberry-Key2-Research) |
-| **Bold 9930** | 9930 (Sprint) | MSM8655 | BBOS 7.1 | ⛔ | — | [→](https://github.com/stanw47/Blackberry-9930-Research) |
+| **Classic** | SQC100-4 (Q20) | MSM8960 | BB10/QNX | rooted | HW-gated | [repo](https://github.com/stanw47/Blackberry-Classic-Research) |
+| **Passport** | SQW100-1 | MSM8974AA | BB10/QNX | rooted (bricked) | HW-gated | [repo](https://github.com/stanw47/Blackberry-Passport-Research) |
+| **Q10** (prototype) | Q10 | MSM8960 | BB10/QNX | pending | ? | [repo](https://github.com/stanw47/Blackberry-Q10-Research) |
+| **Priv** | STV100-1 | MSM8992 | Android 6 | none | locked | [repo](https://github.com/stanw47/Blackberry-Priv-Research) |
+| **KEYone** | BBB100-3 (Sprint) | MSM8953 | Android 7.1.1 | none | locked | [repo](https://github.com/stanw47/Blackberry-KeyOne-Research) |
+| **KEY2** | BBF100-6 (India/APAC, dual-SIM) | SDM660 | Android to LineageOS 22.2 | rooted | unlocked | [repo](https://github.com/stanw47/Blackberry-Key2-Research) |
+| **Bold 9930** | 9930 (Sprint) | MSM8655 | BBOS 7.1 | none | - | [repo](https://github.com/stanw47/Blackberry-9930-Research) |
 
 Machine-readable index: [`devices.yml`](devices.yml).
 
@@ -47,7 +47,7 @@ Machine-readable index: [`devices.yml`](devices.yml).
 
 ## Devices at a glance
 
-### Classic (SQC100 / Q20)
+### Classic (SQC100-4 / Q20)
 - **Device details:** MSM8960 · BB10/QNX 10.3.3.3216 · ClassicNA.
 - **Current status:** rooted (real uid-0), bootable, recoverable; unlock is
   hardware-gated.
@@ -58,7 +58,7 @@ Machine-readable index: [`devices.yml`](devices.yml).
 - **Future plans:** break the binder resmgr EPERM wall; build the A11 userland.
 - **Repo:** [Classic](https://github.com/stanw47/Blackberry-Classic-Research)
 
-### Passport (SQW100)
+### Passport (SQW100-1)
 - **Device details:** MSM8974AA · BB10/QNX · WindermereEMEA.
 - **Current status:** rooted previously; **red-blink / non-bootable** (11011).
 - **Achieved:** driver forensics complete; `FS_DIRTY_ALL` shown RPMB-backed;
@@ -72,7 +72,7 @@ Machine-readable index: [`devices.yml`](devices.yml).
 - **Current status:** **device incoming (~12 h)**; repo scaffolded.
 - **Achieved:** —
 - **In progress:** —
-- **Future plans:** map L0→L1; test whether the engineering bootloader accepts
+- **Future plans:** map L0->L1; test whether the engineering bootloader accepts
   unsigned images.
 - **Repo:** [Q10](https://github.com/stanw47/Blackberry-Q10-Research)
 
@@ -85,18 +85,18 @@ Machine-readable index: [`devices.yml`](devices.yml).
 - **Future plans:** kernel 0-day, TrustZone/trustlet, or ISP/EDL (all gated).
 - **Repo:** [Priv](https://github.com/stanw47/Blackberry-Priv-Research)
 
-### KEYone (BBB100-3)
+### KEYone (BBB100-3 V015)
 - **Device details:** MSM8953 · Android 7.1.1 (ABL766) · **Sprint, carrier-locked**.
 - **Current status:** locked; no root; one reachable kernel bug (DoS).
 - **Achieved:** KGSL/IOMMU bug (CVE-2020-11261 / CVE-2023-33107 class)
   reproduced from `shell`; autoloader teardown (signed firehose + symbolized
   aboot).
-- **In progress:** turning the KGSL bug into kernel R/W → root.
-- **Future plans:** complete the KGSL chain; or physical EDL → `devinfo` patch.
+- **In progress:** turning the KGSL bug into kernel R/W root.
+- **Future plans:** complete the KGSL chain; or physical EDL `devinfo` patch.
 - **Repo:** [KEYone](https://github.com/stanw47/Blackberry-KeyOne-Research)
 
 ### KEY2 (BBF100-6)
-- **Device details:** SDM660 · Android 8.1 → LineageOS 22.2 · **India/APAC,
+- **Device details:** SDM660 · Android 8.1 LineageOS 22.2 · **India/APAC,
   dual-SIM**.
 - **Current status:** **unlocked + running LineageOS 22.2 (Android 15)**.
 - **Achieved:** CVE-2021-1931 unlock (kibo); full tool RE; LineageOS port.
@@ -117,21 +117,22 @@ Machine-readable index: [`devices.yml`](devices.yml).
 
 ## Community Activity (collection-wide)
 
-- **BB10 (Classic/Passport/Q10):** the platform is EOL, but the community keeps
-  it alive — **Oleksandr (bb10.root.sx)** documented the pathtrust root and
-  RAM-loader mechanics; **BBAndroids/balika011** published the `imggen`
-  prototype-bootloader unlock; rooted autoloaders and **BerryCore** are widely
-  shared. No custom OS exists; the Android-on-QNX port here is original work.
-- **Priv:** **never rooted** (an 8-year XDA bounty unclaimed); community effort
-  is audit + hardware (prototype bootloader swap).
-- **KEYone:** **no public unlock/root**; the community only reaches debloat/FRP.
-- **KEY2:** **the success story** — community unlock (kibo) and
-  LineageOS//e/OS ports; active on XDA + postmarketOS.
-- **9930:** hybrid-OS community (recombining RIM-signed modules); no root; the
-  2014 bootloader class is the only door.
-
----
-
+- **BB10 (Classic / Passport / Q10):** end-of-life but actively preserved.
+  **Oleksandr (bb10.root.sx)** documented the root/pathtrust ritual; **BerryCore
+  (sw7ft)** provides a modern QNX userland (GCC/Python/Git, `qpkg`, a Chromium
+  "Berry Browser" beta, an on-device LLM) for rooted devices; **balika011**
+  ported LineageOS 18.1 to the Passport (eMMC swap); **Zinwa** sells Android-14
+  retrofit kits (Q25 for the Classic, P26 for the Passport); **ProjectBerry**
+  archives stock ROMs.
+- **Priv:** never rooted; audit plus hardware (eMMC swap) only; open
+  software-root research (BBPriv-vibe-root) stalled on a physical-address leak.
+- **KEYone:** no public unlock/root; the community reaches debloat/FRP; TWRP
+  only runs on engineering units; Sugar QCT reloads stock firmware.
+- **KEY2:** the success story - CVE-2021-1931 unlock (kibo) and LineageOS / /e/OS
+  ports (BotchedRPR, krab-ubica, FumoEnterprises, tim-ecoder, ronnz98), plus a
+  postmarketOS port.
+- **9930:** hybrid-OS community (recombining RIM-signed modules); the 2014
+  bootloader disclosure is the only door.
 ## Cross-device mechanisms
 
 | Mechanism | Applies to | Doc |
