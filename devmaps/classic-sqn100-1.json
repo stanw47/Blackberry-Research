@@ -1,0 +1,225 @@
+{
+  "devmap_version": "1.0",
+  "generated_utc": "2026-10-05T17:00:00Z",
+  "provenance": {
+    "method": "corpus-import",
+    "sources": [
+      "bbres:docs/structure/appendix-a-device-specs.md",
+      "bbres:docs/structure/appendix-b-partition-layouts.md",
+      "bbres:docs/structure/appendix-c-filesystem-mounts.md",
+      "bbres:docs/structure/appendix-e-security-policy.md",
+      "bbres:docs/bb10-analysis/CLASSIC-PASSPORT-ANALYSIS.md",
+      "bbres:notes/session7o-classic-real-root.md",
+      "bbres:notes/session12-edl-signature-passport.md",
+      "bbres:notes/session15-oleksandr-unlock-and-boot0-build.md"
+    ],
+    "notes": "Synthesized from the Blackberry-Research corpus (live sessions 2026-08/09); not a fresh probe of this session."
+  },
+  "identity": {
+    "serial": "1160442668",
+    "model": "SQN100-1",
+    "codename": "mockingbird (ontario)",
+    "manufacturer": "BlackBerry",
+    "os": {
+      "family": "bb10-qnx",
+      "version": "10.3.3",
+      "build": "QNX BLACKBERRY-528E / 10.3.03.3216 DEV",
+      "patch": "2018-02-21"
+    },
+    "soc": {
+      "name": "MSM8960 (Snapdragon S4 Plus, secboot3)",
+      "hwid": "0x9700270a"
+    }
+  },
+  "access": {
+    "level": "edl",
+    "levels_seen": ["usb", "edl", "qnx", "root"],
+    "capabilities": {
+      "ssh_devuser": true,
+      "uid0": true,
+      "emmc_read": true,
+      "boot0_write": false,
+      "rpmb_write": false,
+      "bootrom_version": "5.46.0.11",
+      "pin": "2C22528E",
+      "edl_loader": "loader_9700270A-00.bin (LDR_00 family, IDtoADDR 9700270a)",
+      "edl_notes": "RAM-loader pipeline fully working (info read + 100% flash); OS flash red-blinks unless the cap.exe flash-time handshake/seal is replayed"
+    }
+  },
+  "hardware": {
+    "cpu": {"name": "Krait 300", "cores": 2, "arch": "ARMv7-a 32-bit", "max_clock": "1.5 GHz"},
+    "memory": {"ram": "2 GB LPDDR2"},
+    "storage": {"emmc": "Toshiba 032GE4", "user_area": "16 GB", "external": "microSD"},
+    "display": "3.5\" 720x720 IPS LCD",
+    "peripherals": [],
+    "security_hw": [
+      {"name": "Qualcomm PBL ROM (secboot3)", "detail": "MSM8960 root of trust"},
+      {"name": "RPMB", "detail": "replay-protected block, authenticated-only write"},
+      {"name": "eMMC hardware boot write-protect", "detail": "B_PWR_WP_EN ext_csd[0xAD]=0x04; EROFS even as uid-0"},
+      {"name": "PMIC", "detail": "PM8921/PM8922 strings in boot0 dump"}
+    ]
+  },
+  "storage_layout": {
+    "emmc": {
+      "name": "Toshiba 032GE4",
+      "ext_csd": {
+        "0xAA BOOT_CONFIG_PROT": "0x00 (not fused, temporary/clearable)",
+        "0xAD B_BOOT_WP": "0x04 (B_PWR_WP_EN)",
+        "0xB3 BOOT_WP_STATUS": "0x08"
+      }
+    },
+    "gpt": {
+      "boot0": [
+        {"name": "SBL2", "lba": "34-521", "size": "249856 B"},
+        {"name": "SBL1", "lba": "522-719", "size": "101376 B"}
+      ],
+      "notes": "MSM8960 SBL2-first chain; standard EFI GPT with valid CRCs. boot0 build-info @0x35a1c, secure field8 @0x35a98; nvram0 copy @0x1801c/0x18098."
+    },
+    "partitions": [
+      {"name": "boot0", "size": "4 MB", "ro": true, "wp": "hardware B_PWR_WP_EN", "verified": true, "notes": "SBL2/SBL1/HWI/bbss.insecure flag"},
+      {"name": "boot1", "size": "4 MB", "ro": true, "wp": "hardware B_PWR_WP_EN", "verified": true, "notes": "backup SBL"},
+      {"name": "rpmb0", "size": "", "ro": false, "wp": "authenticated-only", "notes": "replay-protected"},
+      {"name": "nvram0", "size": "4128768 B", "ro": false, "wp": "none", "notes": "NVRAM records + build-info + bbss.insecure copy"},
+      {"name": "cal_work0", "size": "", "ro": false, "wp": "none", "notes": "calibration"},
+      {"name": "dmi0", "size": "1 MB", "ro": false, "wp": "none", "notes": "device/board info"},
+      {"name": "os0", "size": "", "ro": false, "wp": "none", "notes": "OS slot primary"},
+      {"name": "os1", "size": "", "ro": false, "wp": "none", "notes": "OS slot backup"},
+      {"name": "uda0 / user0", "size": "", "ro": false, "wp": "none", "notes": "user data"},
+      {"name": "radio0", "size": "", "ro": false, "wp": "none", "notes": "modem firmware"},
+      {"name": "sd0", "size": "", "ro": false, "wp": "none", "notes": "SD card"}
+    ],
+    "mounts": [
+      {"dev": "", "path": "/", "fstype": "qnx6", "opts": "ro,trusted"},
+      {"dev": "/dev/emmc/os0t179", "path": "/base", "fstype": "rcfs", "opts": "ro"},
+      {"dev": "/dev/emmc/radio0t179", "path": "/radio", "fstype": "rcfs", "opts": "ro"},
+      {"dev": "/dev/emmc/user0", "path": "/sdcard", "fstype": "qnx6", "opts": ""},
+      {"dev": "/dev/emmc/user0", "path": "/data", "fstype": "qnx6", "opts": "forceencrypt"},
+      {"dev": "/dev/emmc/cal_work0", "path": "/efs", "fstype": "qnx6", "opts": ""},
+      {"dev": "/dev/emmc/sd0", "path": "/accounts/1000/removable/sdcard", "fstype": "dos/fat32", "opts": ""}
+    ]
+  },
+  "boot": {
+    "chain": [
+      {"stage": "PBL (ROM)", "image": "rom", "verified_by": "fused key", "signed": true},
+      {"stage": "SBL2", "image": "boot0 GPT LBA 34-521", "verified_by": "PBL", "signed": true},
+      {"stage": "SBL1", "image": "boot0 GPT LBA 522-719", "verified_by": "SBL2", "signed": true},
+      {"stage": "BBSS", "image": "bbss", "verified_by": "SBL1", "signed": true, "notes": "primary/backup boot chain selection; 'bbss.insecure' flag"},
+      {"stage": "stage1", "image": "stage1", "verified_by": "BBSS", "signed": true},
+      {"stage": "stage2", "image": "stage2", "verified_by": "stage1", "signed": true},
+      {"stage": "stage3", "image": "stage3", "verified_by": "stage2", "signed": true},
+      {"stage": "aboot (LK)", "image": "abootr", "verified_by": "stage3", "signed": true},
+      {"stage": "IFS (QNX)", "image": "boot/IFS", "verified_by": "aboot", "signed": true}
+    ],
+    "build_info": {
+      "version": "11.0.46.5",
+      "builder": "ec_agent",
+      "date": "Jul 8 2014",
+      "secure_field8_boot0_0x35a98": 0,
+      "insecure_field8_nvram0_0x18098": 1,
+      "notes": "nvram0 field8=1 is the getroot artifact ('Insecure mode, Skipping OS Signature verification')"
+    },
+    "verification": {
+      "secure_boot": true,
+      "root_of_trust": "Qualcomm PBL fused key",
+      "signing": "ECDSA P-256",
+      "dm_verity": "present (BB10)",
+      "anti_rollback": "NVRAM blocks 0x2819 OS / 0x2852 radio (mod_nvram can delete for downgrade)"
+    },
+    "write_protect": {
+      "boot0": "hardware EROFS (B_PWR_WP_EN)",
+      "boot1": "hardware EROFS (B_PWR_WP_EN)",
+      "rpmb0": "authenticated-only",
+      "user_area": "writable as root",
+      "oleksandr_nv_bits": "NV 0x2019 bits 42/43 set+persisted; gates the official updater write path, NOT the OS-lane block layer"
+    }
+  },
+  "security": {
+    "selinux": {"mode": "enforcing (Android runtime domains)", "notable_denials": 0},
+    "lsm": ["pathtrust", "bide", "selinux (android runtime)"],
+    "kernel": {"qnx": "QNX Neutrino 8.0.0 (BLACKBERRY-528E)", "hardening": ["grsec/PaX compiled in"]},
+    "verified_boot": {"secure_boot": true, "dm_verity": "present", "avb": false},
+    "write_gates": [
+      {"gate": "eMMC hardware boot WP (B_PWR_WP_EN)", "blocks": "boot0/boot1 write (bootloader replacement)", "bypass": "MMC driver patch to toggle via CMD6, or ISP/desolder"},
+      {"gate": "RPMB authenticated write", "blocks": "rollback/token storage tampering", "bypass": "none known"},
+      {"gate": "pathtrust", "blocks": "exec/mmap/module/firmware from untrusted filesystems", "bypass": "getroot btool whitelist (root only)"},
+      {"gate": "SBL OS-install seal (F9 560-byte trailer + flash-time handshake)", "blocks": "OS flash via non-official tools (bb10mt red-blink)", "bypass": "replay cap.exe stub behavior (open)"},
+      {"gate": "PBL signature verification", "blocks": "unsigned boot chain", "bypass": "oleksandr NV bits (updater path only)"}
+    ]
+  },
+  "surface": {
+    "interfaces": [
+      {"name": "USB BootROM", "transport": "usb", "reachable_at": "edl", "notes": "0FCA:0001, listener-first ritual required"},
+      {"name": "USB RAM-loader", "transport": "usb", "reachable_at": "edl", "notes": "0FCA:8001"},
+      {"name": "USB OS-mode / RNDIS", "transport": "usb", "reachable_at": "qnx", "notes": "0FCA:8017, RNDIS MAC a6:e4:b8:47:d4:4a; SSH via blackberry-connect tunnel"},
+      {"name": "microSD", "transport": "sd", "reachable_at": "qnx", "notes": "FAT32"}
+    ],
+    "devices": [
+      {"path": "/dev/emmc/boot0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "read (root); write EROFS"},
+      {"path": "/dev/emmc/boot1", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "read (root); write EROFS"},
+      {"path": "/dev/emmc/rpmb0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "auth-only"},
+      {"path": "/dev/emmc/nvram0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/dmi0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/os0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/os1", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/uda0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/user0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/proc/boot/pathtrust", "mode": "750", "owner": "root:nto", "selinux": "qnx", "reachable": "root only"},
+      {"path": "/base/bin/__root", "mode": "4755", "owner": "root:nto", "selinux": "qnx", "reachable": "suid-0 when pathtrust-whitelisted"},
+      {"path": "/base/bin/g_Disk_Drivers", "mode": "2777", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "setgid 132 group -> emmc open"}
+    ],
+    "sockets": [],
+    "services": [
+      {"name": "btool", "domain": "root (autoroot + switchzone)", "binary": "/apps/sys.android.*.ns/native/system/xbin/btool"},
+      {"name": "ota_info_pps.sh", "domain": "root", "binary": "/base/scripts/ota_info_pps.sh (symlink -> btool)"},
+      {"name": "mod_nvram", "domain": "root", "binary": "/base/bin/mod_nvram"},
+      {"name": "mmcsdpub", "domain": "root:nto", "binary": "/base/bin/mmcsdpub"}
+    ]
+  },
+  "findings": [
+    {
+      "id": "pathtrust-btool-whitelist-root",
+      "title": "getroot chain: btool pathtrust whitelist -> setuid __root -> interactive uid-0",
+      "component": "QNX pathtrust / btool autoroot",
+      "cve": null,
+      "reachable": "devuser (development mode)",
+      "impact": "root",
+      "status": "exploited 2026-08-30 (verified /root write, full eMMC read)"
+    },
+    {
+      "id": "bide-detection-gaps",
+      "title": "BIDE integrity sensors have 7 mapped detection gaps (G1-G7)",
+      "component": "drivers/bide (BB10 kernel)",
+      "cve": null,
+      "reachable": "requires kernel primitive",
+      "impact": "integrity-detection evasion",
+      "status": "analyzed (appendix E)"
+    },
+    {
+      "id": "edl-os-seal-gate",
+      "title": "bb10mt OS flash red-blink root-caused to missing cap.exe flash-time seal/handshake",
+      "component": "SBL1 OS-install seal (F9 560-byte trailer) / cap.exe stub",
+      "cve": null,
+      "reachable": "EDL RAM-loader lane",
+      "impact": "flash-tooling gate (not device compromise)",
+      "status": "open (packet-capture experiment pending)"
+    },
+    {
+      "id": "oleksandr-nv-unlock",
+      "title": "NV 0x2019 bits 42/43 persist but do not open OS-lane boot0 write",
+      "component": "libnvram / official-updater gate",
+      "cve": null,
+      "reachable": "root (on-device libnvram API)",
+      "impact": "unlock path analysis",
+      "status": "confirmed (boot0 pwrite still EROFS)"
+    },
+    {
+      "id": "no-msm8960-android-conversion",
+      "title": "No public MSM8960 Android conversion; imggen is MSM8974-only",
+      "component": "imggen / boot chain",
+      "cve": null,
+      "reachable": "N/A",
+      "impact": "research limitation",
+      "status": "concluded"
+    }
+  ]
+}

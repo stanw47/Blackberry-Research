@@ -1,0 +1,2182 @@
+{
+  "access": {
+    "capabilities": {
+      "block_rw": true,
+      "packages": true,
+      "selinux": "Enforcing",
+      "shell_uid": "uid=2000(shell)"
+    },
+    "level": "adb",
+    "levels_seen": [
+      "usb",
+      "adb"
+    ]
+  },
+  "boot": {
+    "verification": {
+      "dm_verity": "enforcing",
+      "flash_locked": "1",
+      "verified_boot_state": "green"
+    }
+  },
+  "devmap_version": "1.0",
+  "findings": [],
+  "generated_utc": "2026-10-05T17:05:19.123042Z",
+  "hardware": {
+    "peripherals": [],
+    "security_hw": []
+  },
+  "identity": {
+    "codename": "bbf100",
+    "manufacturer": "BlackBerry",
+    "model": "KEY2",
+    "os": {
+      "build": "lineage_athena-userdebug 15 BP1A.250505.005 eng.dev",
+      "family": "android",
+      "patch": "2026-09-01",
+      "version": "15"
+    },
+    "serial": "5000116887",
+    "soc": {
+      "hwid": "",
+      "name": "sdm660"
+    }
+  },
+  "provenance": {
+    "method": "live-probe",
+    "notes": "",
+    "sources": [
+      "usb",
+      "adb"
+    ]
+  },
+  "security": {
+    "kernel": {
+      "uname": "Linux localhost 4.4.302-Key2+ #9 SMP PREEMPT Tue Sep 15 16:43:13 EDT 2026 aarch64 Toybox"
+    },
+    "selinux": {
+      "mode": "Enforcing",
+      "notable_denials": 0
+    }
+  },
+  "storage_layout": {
+    "mounts": [
+      {
+        "dev": "/dev/block/mmcblk0p73",
+        "fstype": "ext4",
+        "opts": "ro,seclabel,relatime,discard",
+        "path": "/"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,relatime,size=2903632k,nr_inodes=725908,mode=755",
+        "path": "/dev"
+      },
+      {
+        "dev": "devpts",
+        "fstype": "devpts",
+        "opts": "rw,seclabel,relatime,mode=600",
+        "path": "/dev/pts"
+      },
+      {
+        "dev": "proc",
+        "fstype": "proc",
+        "opts": "rw,relatime,gid=3009,hidepid=2",
+        "path": "/proc"
+      },
+      {
+        "dev": "sysfs",
+        "fstype": "sysfs",
+        "opts": "rw,seclabel,relatime",
+        "path": "/sys"
+      },
+      {
+        "dev": "selinuxfs",
+        "fstype": "selinuxfs",
+        "opts": "rw,relatime",
+        "path": "/sys/fs/selinux"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755,gid=1000",
+        "path": "/mnt"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755,gid=1000",
+        "path": "/mnt/installer"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755,gid=1000",
+        "path": "/mnt/androidwritable"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p74",
+        "fstype": "ext4",
+        "opts": "ro,seclabel,relatime,discard",
+        "path": "/vendor"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755",
+        "path": "/apex"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755",
+        "path": "/bootstrap-apex"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755",
+        "path": "/linkerconfig"
+      },
+      {
+        "dev": "none",
+        "fstype": "cgroup",
+        "opts": "rw,nosuid,nodev,noexec,relatime,blkio",
+        "path": "/dev/blkio"
+      },
+      {
+        "dev": "none",
+        "fstype": "cgroup2",
+        "opts": "rw,nosuid,nodev,noexec,relatime",
+        "path": "/sys/fs/cgroup"
+      },
+      {
+        "dev": "none",
+        "fstype": "cgroup",
+        "opts": "rw,nosuid,nodev,noexec,relatime,cpu",
+        "path": "/dev/cpuctl"
+      },
+      {
+        "dev": "none",
+        "fstype": "cgroup",
+        "opts": "rw,nosuid,nodev,noexec,relatime,cpuset,noprefix,release_agent=/sbin/cpuset_release_agent",
+        "path": "/dev/cpuset"
+      },
+      {
+        "dev": "none",
+        "fstype": "cgroup",
+        "opts": "rw,nosuid,nodev,noexec,relatime,memory",
+        "path": "/dev/memcg"
+      },
+      {
+        "dev": "tracefs",
+        "fstype": "tracefs",
+        "opts": "rw,seclabel,relatime,gid=3012",
+        "path": "/sys/kernel/tracing"
+      },
+      {
+        "dev": "/dev/block/loop0",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/bootstrap-apex/com.android.i18n@1"
+      },
+      {
+        "dev": "/dev/block/loop0",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/bootstrap-apex/com.android.i18n"
+      },
+      {
+        "dev": "/dev/block/loop1",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/bootstrap-apex/com.android.runtime@1"
+      },
+      {
+        "dev": "/dev/block/loop1",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/bootstrap-apex/com.android.runtime"
+      },
+      {
+        "dev": "/dev/block/loop2",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/bootstrap-apex/com.android.tzdata@352090000"
+      },
+      {
+        "dev": "/dev/block/loop2",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/bootstrap-apex/com.android.tzdata"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755",
+        "path": "/bootstrap-apex/apex-info-list.xml"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,relatime,size=2903632k,nr_inodes=725908",
+        "path": "/tmp"
+      },
+      {
+        "dev": "debugfs",
+        "fstype": "debugfs",
+        "opts": "rw,seclabel,relatime",
+        "path": "/sys/kernel/debug"
+      },
+      {
+        "dev": "none",
+        "fstype": "configfs",
+        "opts": "rw,nosuid,nodev,noexec,relatime",
+        "path": "/config"
+      },
+      {
+        "dev": "none",
+        "fstype": "fusectl",
+        "opts": "rw,relatime",
+        "path": "/sys/fs/fuse/connections"
+      },
+      {
+        "dev": "bpf",
+        "fstype": "bpf",
+        "opts": "rw,nosuid,nodev,noexec,relatime",
+        "path": "/sys/fs/bpf"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908",
+        "path": "/mnt/vm"
+      },
+      {
+        "dev": "tracefs",
+        "fstype": "tracefs",
+        "opts": "rw,seclabel,relatime,gid=3012",
+        "path": "/sys/kernel/debug/tracing"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p24",
+        "fstype": "vfat",
+        "opts": "ro,context=u:object_r:firmware_file:s0,relatime,uid=1000,gid=1000,fmask=0337,dmask=0227,codepage=437,iocharset=iso8859-1,shortname=lower,errors=remount-ro",
+        "path": "/vendor/firmware_mnt"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p20",
+        "fstype": "vfat",
+        "opts": "ro,context=u:object_r:bt_firmware_file:s0,relatime,uid=1002,gid=3002,fmask=0337,dmask=0227,codepage=437,iocharset=iso8859-1,shortname=lower,errors=remount-ro",
+        "path": "/vendor/bt_firmware"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p21",
+        "fstype": "ext4",
+        "opts": "ro,seclabel,nosuid,nodev,relatime,data=ordered",
+        "path": "/vendor/dsp"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p76",
+        "fstype": "ext4",
+        "opts": "rw,seclabel,nosuid,nodev,noatime,data=ordered",
+        "path": "/cache"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p53",
+        "fstype": "ext4",
+        "opts": "rw,seclabel,nosuid,nodev,noatime,data=ordered",
+        "path": "/mnt/vendor/persist"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755,gid=1000",
+        "path": "/storage"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755",
+        "path": "/linkerconfig"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=700,gid=1000",
+        "path": "/data_mirror"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data_mirror/data_ce/null"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data_mirror/data_de/null"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data_mirror/misc_ce/null"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data_mirror/misc_de/null"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data_mirror/storage_area"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data_mirror/cur_profiles"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data_mirror/ref_profiles"
+      },
+      {
+        "dev": "/dev/block/loop3",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.rkpd@352090000"
+      },
+      {
+        "dev": "/dev/block/loop3",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.rkpd"
+      },
+      {
+        "dev": "/dev/block/loop4",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.tzdata@352090000"
+      },
+      {
+        "dev": "/dev/block/loop4",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.tzdata"
+      },
+      {
+        "dev": "/dev/block/loop5",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.virt@2"
+      },
+      {
+        "dev": "/dev/block/loop5",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.virt"
+      },
+      {
+        "dev": "/dev/block/loop6",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.os.statsd@352090000"
+      },
+      {
+        "dev": "/dev/block/loop6",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.os.statsd"
+      },
+      {
+        "dev": "/dev/block/loop7",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.runtime@1"
+      },
+      {
+        "dev": "/dev/block/loop7",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.runtime"
+      },
+      {
+        "dev": "/dev/block/loop8",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.i18n@1"
+      },
+      {
+        "dev": "/dev/block/loop8",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.i18n"
+      },
+      {
+        "dev": "/dev/block/loop9",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.devicelock@1"
+      },
+      {
+        "dev": "/dev/block/loop9",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.devicelock"
+      },
+      {
+        "dev": "/dev/block/loop10",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.apex.cts.shim@1"
+      },
+      {
+        "dev": "/dev/block/loop10",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.apex.cts.shim"
+      },
+      {
+        "dev": "/dev/block/loop11",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.btservices@352090000"
+      },
+      {
+        "dev": "/dev/block/loop11",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.btservices"
+      },
+      {
+        "dev": "/dev/block/loop12",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.healthfitness@352090000"
+      },
+      {
+        "dev": "/dev/block/loop12",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.healthfitness"
+      },
+      {
+        "dev": "/dev/block/loop13",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.sdkext@352090000"
+      },
+      {
+        "dev": "/dev/block/loop13",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.sdkext"
+      },
+      {
+        "dev": "/dev/block/dm-32",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.scheduling@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-32",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.scheduling"
+      },
+      {
+        "dev": "/dev/block/dm-30",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.nfcservices@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-30",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.nfcservices"
+      },
+      {
+        "dev": "/dev/block/dm-29",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.adbd@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-29",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.adbd"
+      },
+      {
+        "dev": "/dev/block/dm-28",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.media.swcodec@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-28",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.media.swcodec"
+      },
+      {
+        "dev": "/dev/block/dm-27",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.ipsec@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-27",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.ipsec"
+      },
+      {
+        "dev": "/dev/block/dm-25",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.conscrypt@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-25",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.conscrypt"
+      },
+      {
+        "dev": "/dev/block/dm-24",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.permission@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-24",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.permission"
+      },
+      {
+        "dev": "/dev/block/dm-23",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.mediaprovider@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-23",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.mediaprovider"
+      },
+      {
+        "dev": "/dev/block/dm-22",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.media@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-22",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.media"
+      },
+      {
+        "dev": "/dev/block/dm-18",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.extservices@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-18",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.extservices"
+      },
+      {
+        "dev": "/dev/block/dm-19",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.uwb@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-19",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.uwb"
+      },
+      {
+        "dev": "/dev/block/dm-14",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.neuralnetworks@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-14",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.neuralnetworks"
+      },
+      {
+        "dev": "/dev/block/dm-15",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.cellbroadcast@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-15",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.cellbroadcast"
+      },
+      {
+        "dev": "/dev/block/dm-13",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.adservices@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-13",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.adservices"
+      },
+      {
+        "dev": "/dev/block/dm-10",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.profiling@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-10",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.profiling"
+      },
+      {
+        "dev": "/dev/block/dm-0",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.appsearch@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-0",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.appsearch"
+      },
+      {
+        "dev": "/dev/block/dm-7",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.resolv@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-7",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.resolv"
+      },
+      {
+        "dev": "/dev/block/dm-4",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.configinfrastructure@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-4",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.configinfrastructure"
+      },
+      {
+        "dev": "/dev/block/dm-8",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.ondevicepersonalization@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-8",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.ondevicepersonalization"
+      },
+      {
+        "dev": "/dev/block/dm-3",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.art@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-3",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.art"
+      },
+      {
+        "dev": "/dev/block/dm-6",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.wifi@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-6",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.wifi"
+      },
+      {
+        "dev": "/dev/block/dm-2",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.tethering@352090000"
+      },
+      {
+        "dev": "/dev/block/dm-2",
+        "fstype": "ext4",
+        "opts": "ro,dirsync,seclabel,nodev,noatime",
+        "path": "/apex/com.android.tethering"
+      },
+      {
+        "dev": "tmpfs",
+        "fstype": "tmpfs",
+        "opts": "rw,seclabel,nosuid,nodev,noexec,relatime,size=2903632k,nr_inodes=725908,mode=755",
+        "path": "/apex/apex-info-list.xml"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data_mirror/data_ce/null/0"
+      },
+      {
+        "dev": "/dev/block/mmcblk0p77",
+        "fstype": "ext4",
+        "opts": "rw,lazytime,seclabel,nosuid,nodev,noatime,discard,noauto_da_alloc,data=ordered",
+        "path": "/data/user/0"
+      },
+      {
+        "dev": "adb",
+        "fstype": "functionfs",
+        "opts": "rw,relatime",
+        "path": "/dev/usb-ffs/adb"
+      },
+      {
+        "dev": "diag",
+        "fstype": "functionfs",
+        "opts": "rw,relatime",
+        "path": "/dev/ffs-diag"
+      },
+      {
+        "dev": "diag_mdm",
+        "fstype": "functionfs",
+        "opts": "rw,relatime",
+        "path": "/dev/ffs-diag-1"
+      },
+      {
+        "dev": "diag_mdm2",
+        "fstype": "functionfs",
+        "opts": "rw,relatime",
+        "path": "/dev/ffs-diag-2"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=1015,multiuser,mask=6,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/runtime/default/emulated"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=9997,multiuser,mask=23,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/runtime/read/emulated"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=9997,multiuser,mask=7,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/runtime/write/emulated"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=9997,multiuser,mask=7,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/runtime/full/emulated"
+      },
+      {
+        "dev": "/dev/fuse",
+        "fstype": "fuse",
+        "opts": "rw,lazytime,nosuid,nodev,noexec,noatime,user_id=0,group_id=0,allow_other",
+        "path": "/mnt/installer/0/emulated"
+      },
+      {
+        "dev": "/dev/fuse",
+        "fstype": "fuse",
+        "opts": "rw,lazytime,nosuid,nodev,noexec,noatime,user_id=0,group_id=0,allow_other",
+        "path": "/mnt/androidwritable/0/emulated"
+      },
+      {
+        "dev": "/dev/fuse",
+        "fstype": "fuse",
+        "opts": "rw,lazytime,nosuid,nodev,noexec,noatime,user_id=0,group_id=0,allow_other",
+        "path": "/mnt/user/0/emulated"
+      },
+      {
+        "dev": "/dev/fuse",
+        "fstype": "fuse",
+        "opts": "rw,lazytime,nosuid,nodev,noexec,noatime,user_id=0,group_id=0,allow_other",
+        "path": "/storage/emulated"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=9997,multiuser,mask=7,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/pass_through/0/emulated"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=1015,multiuser,mask=6,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/androidwritable/0/emulated/0/Android/data"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=1015,multiuser,mask=6,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/installer/0/emulated/0/Android/data"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=1015,multiuser,mask=6,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/user/0/emulated/0/Android/data"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=1015,multiuser,mask=6,derive_gid,default_normal,unshared_obb",
+        "path": "/storage/emulated/0/Android/data"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=1015,multiuser,mask=6,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/androidwritable/0/emulated/0/Android/obb"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=1015,multiuser,mask=6,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/user/0/emulated/0/Android/obb"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=1015,multiuser,mask=6,derive_gid,default_normal,unshared_obb",
+        "path": "/storage/emulated/0/Android/obb"
+      },
+      {
+        "dev": "/data/media",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=9997,multiuser,mask=7,derive_gid,default_normal,unshared_obb",
+        "path": "/mnt/installer/0/emulated/0/Android/obb"
+      },
+      {
+        "dev": "/dev/block/vold/public:179,64",
+        "fstype": "vfat",
+        "opts": "ro,dirsync,nosuid,nodev,noexec,noatime,gid=1023,fmask=0007,dmask=0007,allow_utime=0020,codepage=437,iocharset=iso8859-1,shortname=mixed,utf8,time_offset=420,errors=remount-ro",
+        "path": "/mnt/media_rw/F0E9-334E"
+      },
+      {
+        "dev": "/mnt/media_rw/F0E9-334E",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=1015,mask=6",
+        "path": "/mnt/runtime/default/F0E9-334E"
+      },
+      {
+        "dev": "/mnt/media_rw/F0E9-334E",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=9997,mask=18",
+        "path": "/mnt/runtime/read/F0E9-334E"
+      },
+      {
+        "dev": "/mnt/media_rw/F0E9-334E",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=9997,mask=18",
+        "path": "/mnt/runtime/write/F0E9-334E"
+      },
+      {
+        "dev": "/mnt/media_rw/F0E9-334E",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=9997,mask=7",
+        "path": "/mnt/runtime/full/F0E9-334E"
+      },
+      {
+        "dev": "/dev/fuse",
+        "fstype": "fuse",
+        "opts": "rw,lazytime,nosuid,nodev,noexec,noatime,user_id=0,group_id=0,allow_other",
+        "path": "/mnt/installer/0/F0E9-334E"
+      },
+      {
+        "dev": "/dev/fuse",
+        "fstype": "fuse",
+        "opts": "rw,lazytime,nosuid,nodev,noexec,noatime,user_id=0,group_id=0,allow_other",
+        "path": "/mnt/androidwritable/0/F0E9-334E"
+      },
+      {
+        "dev": "/dev/fuse",
+        "fstype": "fuse",
+        "opts": "rw,lazytime,nosuid,nodev,noexec,noatime,user_id=0,group_id=0,allow_other",
+        "path": "/mnt/user/0/F0E9-334E"
+      },
+      {
+        "dev": "/dev/fuse",
+        "fstype": "fuse",
+        "opts": "rw,lazytime,nosuid,nodev,noexec,noatime,user_id=0,group_id=0,allow_other",
+        "path": "/storage/F0E9-334E"
+      },
+      {
+        "dev": "/mnt/media_rw/F0E9-334E",
+        "fstype": "sdcardfs",
+        "opts": "rw,nosuid,nodev,noexec,noatime,fsuid=1023,fsgid=1023,gid=9997,mask=7",
+        "path": "/mnt/pass_through/0/F0E9-334E"
+      }
+    ],
+    "partitions": []
+  },
+  "surface": {
+    "devices": [
+      {
+        "mode": "666",
+        "owner": "root:root",
+        "path": "/dev/binder",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "666",
+        "owner": "root:root",
+        "path": "/dev/hwbinder",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "666",
+        "owner": "root:root",
+        "path": "/dev/vndbinder",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "666",
+        "owner": "root:root",
+        "path": "/dev/ashmem",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "666",
+        "owner": "system:system",
+        "path": "/dev/kgsl-3d0",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "664",
+        "owner": "system:system",
+        "path": "/dev/ion",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "660",
+        "owner": "system:drmrpc",
+        "path": "/dev/qseecom",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "664",
+        "owner": "system:system",
+        "path": "/dev/adsprpc-smd",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "660",
+        "owner": "bluetooth:bluetooth",
+        "path": "/dev/smd7",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "600",
+        "owner": "root:root",
+        "path": "/dev/smem_log",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "755",
+        "owner": "root:root",
+        "path": "/dev/block/bootdevice/by-name",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "777",
+        "owner": "root:root",
+        "path": "/dev/block/bootdevice",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "600",
+        "owner": "root:root",
+        "path": "/dev/block/mmcblk0",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "660",
+        "owner": "system:vendor_qti_diag",
+        "path": "/dev/diag",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "666",
+        "owner": "root:root",
+        "path": "/dev/random",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "666",
+        "owner": "root:root",
+        "path": "/dev/urandom",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "666",
+        "owner": "root:root",
+        "path": "/dev/zero",
+        "reachable": "present",
+        "selinux": ""
+      },
+      {
+        "mode": "666",
+        "owner": "root:root",
+        "path": "/dev/null",
+        "reachable": "present",
+        "selinux": ""
+      }
+    ],
+    "interfaces": [],
+    "services": [
+      {
+        "name": ""
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.ui.ISurfaceComposer]"
+      },
+      {
+        "name": "[android.gui.ISurfaceComposer]"
+      },
+      {
+        "name": "[android.view.accessibility.IAccessibilityManager]"
+      },
+      {
+        "name": "[android.accounts.IAccountManager]"
+      },
+      {
+        "name": "[android.app.IActivityManager]"
+      },
+      {
+        "name": "[android.app.IActivityTaskManager]"
+      },
+      {
+        "name": "[android.debug.IAdbManager]"
+      },
+      {
+        "name": "[android.adbroot.IADBRootService]"
+      },
+      {
+        "name": "[android.app.adservices.IAdServicesManager]"
+      },
+      {
+        "name": "[android.app.IAlarmManager]"
+      },
+      {
+        "name": "[android.frameworks.cameraservice.service.ICameraService]"
+      },
+      {
+        "name": "[android.frameworks.location.altitude.IAltitudeService]"
+      },
+      {
+        "name": "[android.frameworks.sensorservice.ISensorManager]"
+      },
+      {
+        "name": "[android.frameworks.stats.IStats]"
+      },
+      {
+        "name": "[android.frameworks.vibrator.IVibratorControlService]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.hardware.media.c2.IComponentStore]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.security.apc.IProtectedConfirmation]"
+      },
+      {
+        "name": "[android.security.authorization.IKeystoreAuthorization]"
+      },
+      {
+        "name": "[android.security.compat.IKeystoreCompatService]"
+      },
+      {
+        "name": "[android.security.identity.ICredentialStoreFactory]"
+      },
+      {
+        "name": "[android.security.legacykeystore.ILegacyKeystore]"
+      },
+      {
+        "name": "[android.security.maintenance.IKeystoreMaintenance]"
+      },
+      {
+        "name": "[android.security.metrics.IKeystoreMetrics]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.system.keystore2.IKeystoreService]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.apphibernation.IAppHibernationService]"
+      },
+      {
+        "name": "[android.content.integrity.IAppIntegrityManager]"
+      },
+      {
+        "name": "[android.app.appsearch.aidl.IAppSearchManager]"
+      },
+      {
+        "name": "[com.android.internal.app.IAppOpsService]"
+      },
+      {
+        "name": "[com.android.internal.appwidget.IAppWidgetService]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.security.attestationverification.IAttestationVerificationManagerService]"
+      },
+      {
+        "name": "[android.media.IAudioService]"
+      },
+      {
+        "name": "[android.hardware.biometrics.IAuthService]"
+      },
+      {
+        "name": "[android.security.authenticationpolicy.IAuthenticationPolicyService]"
+      },
+      {
+        "name": "[android.view.autofill.IAutoFillManager]"
+      },
+      {
+        "name": "[android.content.pm.IBackgroundInstallControlService]"
+      },
+      {
+        "name": "[android.app.backup.IBackupManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.os.IBatteryPropertiesRegistrar]"
+      },
+      {
+        "name": "[com.android.internal.app.IBatteryStats]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.hardware.biometrics.IBiometricService]"
+      },
+      {
+        "name": "[android.app.blob.IBlobStoreManager]"
+      },
+      {
+        "name": "[android.bluetooth.IBluetoothManager]"
+      },
+      {
+        "name": "[android.os.IDumpstate]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[com.android.internal.telephony.ICarrierConfigLoader]"
+      },
+      {
+        "name": "[android.content.IClipboard]"
+      },
+      {
+        "name": "[android.hardware.display.IColorDisplayManager]"
+      },
+      {
+        "name": "[android.companion.ICompanionDeviceManager]"
+      },
+      {
+        "name": "[android.net.IConnectivityManager]"
+      },
+      {
+        "name": "[android.net.connectivity.aidl.ConnectivityNative]"
+      },
+      {
+        "name": "[android.net.IIpConnectivityMetrics]"
+      },
+      {
+        "name": "[android.content.IContentService]"
+      },
+      {
+        "name": "[android.app.contextualsearch.IContextualSearchManager]"
+      },
+      {
+        "name": "[android.location.ICountryDetector]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.credentials.ICredentialManager]"
+      },
+      {
+        "name": "[android.content.pm.ICrossProfileApps]"
+      },
+      {
+        "name": "[android.content.pm.IDataLoaderManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.os.IDeviceIdentifiersPolicyService]"
+      },
+      {
+        "name": "[android.devicelock.IDeviceLockService]"
+      },
+      {
+        "name": "[android.app.admin.IDevicePolicyManager]"
+      },
+      {
+        "name": "[android.hardware.devicestate.IDeviceStateManager]"
+      },
+      {
+        "name": "[android.os.IDeviceIdleController]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.hardware.display.IDisplayManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.content.pm.verify.domain.IDomainVerificationManager]"
+      },
+      {
+        "name": "[com.qti.dpm.IDpmService]"
+      },
+      {
+        "name": "[android.service.dreams.IDreamManager]"
+      },
+      {
+        "name": "[drm.IDrmManagerService]"
+      },
+      {
+        "name": "[com.android.internal.os.IDropBoxManagerService]"
+      },
+      {
+        "name": "[android.os.image.IDynamicSystemService]"
+      },
+      {
+        "name": "[android.app.ecm.IEnhancedConfirmationManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.net.IEthernetManager]"
+      },
+      {
+        "name": "[android.os.IExternalVibratorService]"
+      },
+      {
+        "name": "[android.flags.IFeatureFlags]"
+      },
+      {
+        "name": "[android.security.IFileIntegrityService]"
+      },
+      {
+        "name": "[android.hardware.fingerprint.IFingerprintService]"
+      },
+      {
+        "name": "[com.android.internal.graphics.fonts.IFontManager]"
+      },
+      {
+        "name": "[android.app.IGameManagerService]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.graphicsenv.IGpuService]"
+      },
+      {
+        "name": "[android.app.IGrammaticalInflectionManager]"
+      },
+      {
+        "name": "[android.view.IGraphicsStats]"
+      },
+      {
+        "name": "[android.os.IHardwarePropertiesManager]"
+      },
+      {
+        "name": "[android.health.connect.aidl.IHealthConnectService]"
+      },
+      {
+        "name": "[com.android.internal.telephony.IMms]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.os.IIncidentCompanion]"
+      },
+      {
+        "name": "[android.hardware.input.IInputManager]"
+      },
+      {
+        "name": "[com.android.internal.view.IInputMethodManager]"
+      },
+      {
+        "name": "[android.os.IInputFlinger]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[com.android.internal.telephony.IOns]"
+      },
+      {
+        "name": "[com.android.internal.telephony.IPhoneSubInfo]"
+      },
+      {
+        "name": "[android.net.IIpSecService]"
+      },
+      {
+        "name": "[com.android.internal.telephony.ISms]"
+      },
+      {
+        "name": "[com.android.internal.telephony.ISub]"
+      },
+      {
+        "name": "[android.app.job.IJobScheduler]"
+      },
+      {
+        "name": "[android.content.pm.ILauncherApps]"
+      },
+      {
+        "name": "[android.permission.ILegacyPermissionManager]"
+      },
+      {
+        "name": "[android.hardware.lights.ILightsManager]"
+      },
+      {
+        "name": "[lineageos.app.ILineageGlobalActions]"
+      },
+      {
+        "name": "[lineageos.hardware.ILineageHardwareService]"
+      },
+      {
+        "name": "[lineageos.hardware.ILiveDisplayService]"
+      },
+      {
+        "name": "[lineageos.trust.ITrustInterface]"
+      },
+      {
+        "name": "[android.app.ILocaleManager]"
+      },
+      {
+        "name": "[android.location.ILocationManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[com.android.internal.widget.ILockSettings]"
+      },
+      {
+        "name": "[android.os.logcat.ILogcatManagerService]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.os.IServiceManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.media.IAudioFlingerService]"
+      },
+      {
+        "name": "[android.media.IAudioPolicyService]"
+      },
+      {
+        "name": "[android.hardware.ICameraService]"
+      },
+      {
+        "name": "[android.hardware.ICameraServiceProxy]"
+      },
+      {
+        "name": "[android.IMediaExtractorService]"
+      },
+      {
+        "name": "[android.media.IMediaMetricsService]"
+      },
+      {
+        "name": "[android.media.IMediaPlayerService]"
+      },
+      {
+        "name": "[android.media.IResourceManagerService]"
+      },
+      {
+        "name": "[android.media.IResourceObserverService]"
+      },
+      {
+        "name": "[android.media.IMediaCommunicationService]"
+      },
+      {
+        "name": "[android.media.metrics.IMediaMetricsManager]"
+      },
+      {
+        "name": "[android.media.projection.IMediaProjectionManager]"
+      },
+      {
+        "name": "[android.media.IMediaResourceMonitor]"
+      },
+      {
+        "name": "[android.media.IMediaRouterService]"
+      },
+      {
+        "name": "[android.media.session.ISessionManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.hardware.memtrack.IMemtrack]"
+      },
+      {
+        "name": "[android.media.midi.IMidiManager]"
+      },
+      {
+        "name": "[android.os.storage.IStorageManager]"
+      },
+      {
+        "name": "[android.nearby.INearbyManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.net.metrics.INetdEventListener]"
+      },
+      {
+        "name": "[android.net.INetworkPolicyManager]"
+      },
+      {
+        "name": "[android.net.INetworkStatsService]"
+      },
+      {
+        "name": "[android.os.INetworkManagementService]"
+      },
+      {
+        "name": "[android.net.INetworkScoreService]"
+      },
+      {
+        "name": "[android.net.INetworkStackConnector]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[com.android.internal.net.INetworkWatchlistManager]"
+      },
+      {
+        "name": "[android.nfc.INfcAdapter]"
+      },
+      {
+        "name": "[android.app.INotificationManager]"
+      },
+      {
+        "name": "[android.service.oemlock.IOemLockService]"
+      },
+      {
+        "name": "[android.app.ondeviceintelligence.IOnDeviceIntelligenceManager]"
+      },
+      {
+        "name": "[android.ondevicepersonalization.IOnDevicePersonalizationSystemService]"
+      },
+      {
+        "name": "[android.content.pm.IOtaDexopt]"
+      },
+      {
+        "name": "[android.content.om.IOverlayManager]"
+      },
+      {
+        "name": "[android.net.IPacProxyManager]"
+      },
+      {
+        "name": "[android.content.pm.IPackageManager]"
+      },
+      {
+        "name": "[android.content.pm.IPackageManagerNative]"
+      },
+      {
+        "name": "[android.app.people.IPeopleManager]"
+      },
+      {
+        "name": "[android.os.IHintManager]"
+      },
+      {
+        "name": "[android.os.IPermissionController]"
+      },
+      {
+        "name": "[android.permission.IPermissionChecker]"
+      },
+      {
+        "name": "[android.permission.IPermissionManager]"
+      },
+      {
+        "name": "[android.service.persistentdata.IPersistentDataBlockService]"
+      },
+      {
+        "name": "[com.android.internal.telephony.ITelephony]"
+      },
+      {
+        "name": "[android.app.pinner.IPinnerService]"
+      },
+      {
+        "name": "[com.android.internal.compat.IPlatformCompat]"
+      },
+      {
+        "name": "[com.android.internal.compat.IPlatformCompatNative]"
+      },
+      {
+        "name": "[android.os.IPowerManager]"
+      },
+      {
+        "name": "[android.os.IPowerStatsService]"
+      },
+      {
+        "name": "[android.print.IPrintManager]"
+      },
+      {
+        "name": "[android.os.IProcessInfoService]"
+      },
+      {
+        "name": "[com.android.internal.app.procstats.IProcessStats]"
+      },
+      {
+        "name": "[lineageos.app.IProfileManager]"
+      },
+      {
+        "name": "[android.os.IProfilingService]"
+      },
+      {
+        "name": "[com.android.ims.internal.IRcsService]"
+      },
+      {
+        "name": "[android.scheduling.IRebootReadinessManager]"
+      },
+      {
+        "name": "[android.os.IRecoverySystem]"
+      },
+      {
+        "name": "[android.security.rkp.IRemoteProvisioning]"
+      },
+      {
+        "name": "[android.content.res.IResourcesManager]"
+      },
+      {
+        "name": "[android.content.IRestrictionsManager]"
+      },
+      {
+        "name": "[android.app.role.IRoleManager]"
+      },
+      {
+        "name": "[android.content.rollback.IRollbackManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.safetycenter.ISafetyCenterManager]"
+      },
+      {
+        "name": "[android.os.ISchedulingPolicyService]"
+      },
+      {
+        "name": "[android.app.sdksandbox.ISdkSandboxManager]"
+      },
+      {
+        "name": "[android.app.ISearchManager]"
+      },
+      {
+        "name": "[android.security.keystore.IKeyAttestationApplicationIdProvider]"
+      },
+      {
+        "name": "[android.se.omapi.ISecureElementService]"
+      },
+      {
+        "name": "[android.os.ISecurityStateManager]"
+      },
+      {
+        "name": "[android.view.ISensitiveContentProtectionManager]"
+      },
+      {
+        "name": "[android.hardware.ISensorPrivacyManager]"
+      },
+      {
+        "name": "[android.gui.SensorServer]"
+      },
+      {
+        "name": "[android.hardware.ISerialManager]"
+      },
+      {
+        "name": "[android.net.nsd.INsdManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.content.pm.IShortcutService]"
+      },
+      {
+        "name": "[com.android.internal.telephony.IIccPhoneBook]"
+      },
+      {
+        "name": "[android.app.slice.ISliceManager]"
+      },
+      {
+        "name": "[com.android.internal.app.ISoundTriggerService]"
+      },
+      {
+        "name": "[android.media.soundtrigger_middleware.ISoundTriggerMiddlewareService]"
+      },
+      {
+        "name": "[android.speech.IRecognitionServiceManager]"
+      },
+      {
+        "name": "[android.os.IStatsd]"
+      },
+      {
+        "name": "[android.os.IStatsBootstrapAtomService]"
+      },
+      {
+        "name": "[android.os.IStatsCompanionService]"
+      },
+      {
+        "name": "[android.os.IStatsManagerService]"
+      },
+      {
+        "name": "[com.android.internal.statusbar.IStatusBarService]"
+      },
+      {
+        "name": "[android.os.IStoraged]"
+      },
+      {
+        "name": "[android.os.storaged.IStoragedPrivate]"
+      },
+      {
+        "name": "[android.app.usage.IStorageStatsManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.os.ISystemConfig]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.os.ISystemUpdateManager]"
+      },
+      {
+        "name": "[com.android.internal.telecom.ITelecomService]"
+      },
+      {
+        "name": "[com.android.internal.telephony.ITelephonyRegistry]"
+      },
+      {
+        "name": "[android.telephony.ims.aidl.IImsRcsController]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.net.ITetheringConnector]"
+      },
+      {
+        "name": "[android.service.textclassifier.ITextClassifierService]"
+      },
+      {
+        "name": "[com.android.internal.textservice.ITextServicesManager]"
+      },
+      {
+        "name": "[android.speech.tts.ITextToSpeechManager]"
+      },
+      {
+        "name": "[android.os.IThermalService]"
+      },
+      {
+        "name": "[android.app.timedetector.ITimeDetectorService]"
+      },
+      {
+        "name": "[android.app.timezonedetector.ITimeZoneDetectorService]"
+      },
+      {
+        "name": "[android.tracing.ITracingServiceProxy]"
+      },
+      {
+        "name": "[com.android.internal.os.IBinaryTransparencyService]"
+      },
+      {
+        "name": "[android.app.trust.ITrustManager]"
+      },
+      {
+        "name": "[android.app.IUiModeManager]"
+      },
+      {
+        "name": "[android.os.IUpdateLock]"
+      },
+      {
+        "name": "[android.app.IUriGrantsManager]"
+      },
+      {
+        "name": "[android.app.usage.IUsageStatsManager]"
+      },
+      {
+        "name": "[android.hardware.usb.IUsbManager]"
+      },
+      {
+        "name": "[android.os.IUserManager]"
+      },
+      {
+        "name": "[android.net.vcn.IVcnManagementService]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.os.IVibratorManagerService]"
+      },
+      {
+        "name": "[android.companion.virtual.IVirtualDeviceManager]"
+      },
+      {
+        "name": "[android.companion.virtualnative.IVirtualDeviceManagerNative]"
+      },
+      {
+        "name": "[com.android.internal.app.IVoiceInteractionManagerService]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.net.IVpnManager]"
+      },
+      {
+        "name": "[android.app.IWallpaperManager]"
+      },
+      {
+        "name": "[android.app.wearable.IWearableSensingManager]"
+      },
+      {
+        "name": "[android.webkit.IWebViewUpdateService]"
+      },
+      {
+        "name": "[android.net.wifi.IWifiManager]"
+      },
+      {
+        "name": "[]"
+      },
+      {
+        "name": "[android.net.wifi.p2p.IWifiP2pManager]"
+      },
+      {
+        "name": "[android.net.wifi.IWifiScanner]"
+      },
+      {
+        "name": "[android.view.IWindowManager]"
+      }
+    ],
+    "sockets": [
+      {
+        "path": "/dev/socket/ims_datad"
+      },
+      {
+        "path": "/dev/socket/dpmd"
+      },
+      {
+        "path": "/data/system/unsolzygotesocket"
+      },
+      {
+        "path": "/dev/socket/tcm"
+      },
+      {
+        "path": "/dev/socket/dpmwrapper"
+      },
+      {
+        "path": "/dev/socket/traced_consumer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/wpa_wlan0"
+      },
+      {
+        "path": "/dev/socket/adbd"
+      },
+      {
+        "path": "/dev/socket/mlid"
+      },
+      {
+        "path": "/dev/socket/location/xtra/socket_xtra"
+      },
+      {
+        "path": "/dev/socket/qmux_radio/ril_ipc"
+      },
+      {
+        "path": "/data/vendor/wifi/wpa/sockets/wlan0"
+      },
+      {
+        "path": "/data/vendor/wifi/wpa/sockets/wpa_ctrl_1794-10"
+      },
+      {
+        "path": "/data/system/ndebugsocket"
+      },
+      {
+        "path": "/dev/socket/netmgr/netmgr_connect_socket"
+      },
+      {
+        "path": "/dev/socket/thermal-send-client"
+      },
+      {
+        "path": "/dev/socket/thermal-recv-client"
+      },
+      {
+        "path": "/dev/socket/thermal-recv-passive-client"
+      },
+      {
+        "path": "/dev/socket/thermal-send-rule"
+      },
+      {
+        "path": "/dev/socket/ims_qmid"
+      },
+      {
+        "path": "/dev/socket/location/socket_hal"
+      },
+      {
+        "path": "/dev/socket/logd"
+      },
+      {
+        "path": "/dev/socket/logdr"
+      },
+      {
+        "path": "/dev/socket/logdw"
+      },
+      {
+        "path": "/dev/socket/lmkd"
+      },
+      {
+        "path": "/dev/socket/pps"
+      },
+      {
+        "path": "/dev/socket/dnsproxyd"
+      },
+      {
+        "path": "/dev/socket/mdns"
+      },
+      {
+        "path": "/dev/socket/fwmarkd"
+      },
+      {
+        "path": "/dev/socket/tombstoned_crash"
+      },
+      {
+        "path": "/dev/socket/property_service_for_system"
+      },
+      {
+        "path": "/dev/socket/tombstoned_intercept"
+      },
+      {
+        "path": "/dev/socket/property_service"
+      },
+      {
+        "path": "/dev/socket/tombstoned_java_trace"
+      },
+      {
+        "path": "/dev/socket/statsdw"
+      },
+      {
+        "path": "/dev/socket/zygote"
+      },
+      {
+        "path": "/dev/socket/usap_pool_primary"
+      },
+      {
+        "path": "/dev/socket/zygote_secondary"
+      },
+      {
+        "path": "/dev/socket/usap_pool_secondary"
+      },
+      {
+        "path": "/dev/socket/location/mq/location-mq-s"
+      },
+      {
+        "path": "/dev/socket/zygote_secondary"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/zygote"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/adbd"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/qmux_radio/ril_ipc"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/qmux_radio/ril_ipc"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/lmkd"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/location/mq/location-mq-s"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/location/mq/location-mq-s"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/dpmd"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/traced_producer"
+      },
+      {
+        "path": "/dev/socket/thermal-send-client"
+      }
+    ]
+  }
+}

@@ -1,0 +1,302 @@
+{
+  "devmap_version": "1.0",
+  "generated_utc": "2026-10-05T17:00:00Z",
+  "provenance": {
+    "method": "corpus-import",
+    "sources": [
+      "bbres:docs/structure/appendix-a-device-specs.md",
+      "bbres:docs/structure/appendix-b-partition-layouts.md",
+      "bbres:docs/structure/appendix-c-filesystem-mounts.md",
+      "bbres:docs/structure/appendix-e-security-policy.md",
+      "bbres:docs/bb10-analysis/CLASSIC-PASSPORT-ANALYSIS.md",
+      "bbres:notes/session12-passport-root/",
+      "bbres:notes/session15-oleksandr-unlock-and-boot0-build.md"
+    ],
+    "notes": "Synthesized from the Blackberry-Research corpus (live sessions 2026-08/09); not a fresh probe of this session. Live boot0 dump parsed on-device @0x2DEB0."
+  },
+  "identity": {
+    "serial": "",
+    "model": "SQW100-1",
+    "codename": "WINDERMERE (product 'wolverine', variant emea)",
+    "manufacturer": "BlackBerry",
+    "os": {
+      "family": "bb10-qnx",
+      "version": "10.3.3",
+      "build": "QNX BLACKBERRY-603C / 10.3.03.3216",
+      "patch": "2018-02-21"
+    },
+    "soc": {
+      "name": "MSM8974AA (Snapdragon 800)",
+      "hwid": "0x87002c0a",
+      "hwid_variants": [
+        "0x84002c0a (NA/SQW100-3)",
+        "0x85002c0a (VZW/SQW100-2)",
+        "0x86002c0a (Sprint)",
+        "0x8c002c0a (Wichita)",
+        "0x8d/8e/8f002c0a (windermere2/3/4, SQW100-4/ROW)"
+      ]
+    }
+  },
+  "access": {
+    "level": "root",
+    "levels_seen": ["usb", "qnx", "root"],
+    "capabilities": {
+      "ssh_devuser": true,
+      "uid0": true,
+      "emmc_read": true,
+      "boot0_write": false,
+      "rpmb_write": false,
+      "edl_loader": "loader_8D002C0A-00.bin (222624 B, IDtoADDR 0x2C0A -> 0x0DD00000)",
+      "edl_status": "loader lane built read-only; BootROM/MCT capture pending (device kept booting to OS-mode 0x8017)",
+      "nv_unlock": "NV 0x2019 bits 42/43 set + persisted via libnvram (oleksandr unlock)"
+    }
+  },
+  "hardware": {
+    "cpu": {"name": "Krait 400", "cores": 4, "arch": "ARMv7-a 32-bit", "max_clock": "2.3 GHz"},
+    "memory": {"ram": "3 GB LPDDR3"},
+    "storage": {"emmc": "32 GB", "external": "microSD"},
+    "display": "4.5\" 1440x1440 IPS LCD",
+    "peripherals": [],
+    "security_hw": [
+      {"name": "Qualcomm PBL ROM", "detail": "MSM8974AA root of trust; PBL debug mode exploited by passport_stage3"},
+      {"name": "RPMB", "detail": "replay-protected block, authenticated-only write"},
+      {"name": "eMMC hardware boot write-protect", "detail": "B_PWR_WP_EN ext_csd[0xAD]=0x04; EROFS even as uid-0"},
+      {"name": "Sahara firehose", "detail": "available for MSM8974 (unlike Classic)"}
+    ]
+  },
+  "storage_layout": {
+    "emmc": {
+      "ext_csd": {
+        "0xAA BOOT_CONFIG_PROT": "0x00 (not fused, temporary/clearable)",
+        "0xAD B_BOOT_WP": "0x04 (B_PWR_WP_EN)",
+        "0xB3 BOOT_WP_STATUS": "0x08",
+        "0xB3+179 BOOT_BUS_CONDITIONS": "guide sets 0x08 only for desolder/remount path; original eMMC likely already correct"
+      },
+      "mct": {
+        "offset": "0xFFC00",
+        "size": "0x400",
+        "magic": "0x92BE564A v1.29",
+        "partitions_offset_size_16": {
+          "nvram": "0x210000 (4032K)",
+          "cal_work": "0x600000 (28672K)",
+          "cal_backup": "0x4200000 (65536K)",
+          "os": "0x28200000 (512M)",
+          "user": "0x50200000 (32G)"
+        }
+      }
+    },
+    "gpt": {
+      "user": [
+        {"name": "gsign", "lba": "34-39", "size": "6 sectors", "notes": "GPT signature"},
+        {"name": "mct_b", "lba": "40-47", "size": "8 sectors", "notes": "MCT backup"},
+        {"name": "pad", "lba": "48-127", "size": "80 sectors"},
+        {"name": "nvram", "lba": "128-8191", "size": "3.9 MB"},
+        {"name": "calwork_b", "lba": "8192-65535", "size": "28 MB"},
+        {"name": "dmi_b", "lba": "65536-131071", "size": "32 MB"},
+        {"name": "calback_b", "lba": "131072-262143", "size": "64 MB"},
+        {"name": "aboot", "lba": "262144-270335", "size": "4 MB"},
+        {"name": "sbl1", "lba": "270336-272383", "size": "1 MB"},
+        {"name": "rpm", "lba": "272384-273407", "size": "0.5 MB"},
+        {"name": "tz", "lba": "273408-274431", "size": "0.5 MB"},
+        {"name": "sdi", "lba": "274432-275455", "size": "0.5 MB"},
+        {"name": "fsc", "lba": "278528-281599", "size": "1.5 MB"},
+        {"name": "modemst1", "lba": "281600-284671", "size": "1.5 MB"},
+        {"name": "modemst2", "lba": "284672-287743", "size": "1.5 MB"},
+        {"name": "blog", "lba": "287744-288255", "size": "0.2 MB"},
+        {"name": "perm", "lba": "288256-288767", "size": "0.2 MB"},
+        {"name": "nvuser", "lba": "288768-289279", "size": "0.2 MB"},
+        {"name": "ddr", "lba": "289280-289343", "size": "64 sectors"},
+        {"name": "bkup_ddr", "lba": "289344-289407", "size": "64 sectors"},
+        {"name": "prdid", "lba": "294912-295415", "size": "0.2 MB"},
+        {"name": "boardid", "lba": "295424-295927", "size": "0.2 MB"},
+        {"name": "fsg", "lba": "295936-299007", "size": "1.5 MB"},
+        {"name": "ssd", "lba": "311296-313343", "size": "1 MB"},
+        {"name": "metadata", "lba": "313344-315391", "size": "1 MB"},
+        {"name": "frp", "lba": "315392-317439", "size": "1 MB"},
+        {"name": "bcota", "lba": "327680-335871", "size": "4 MB"},
+        {"name": "rcause", "lba": "335872-368639", "size": "16 MB"},
+        {"name": "spare", "lba": "368640-393215", "size": "12 MB"},
+        {"name": "persist", "lba": "393216-458751", "size": "32 MB"},
+        {"name": "crypto", "lba": "458752-524279", "size": "32 MB"},
+        {"name": "ares", "lba": "524280-524287", "size": "8 sectors"},
+        {"name": "boot", "lba": "524288-589823", "size": "32 MB", "notes": "IFS"},
+        {"name": "recovery", "lba": "589824-655359", "size": "32 MB"},
+        {"name": "modem", "lba": "655360-802815", "size": "72 MB"},
+        {"name": "system", "lba": "802816-6045695", "size": "2560 MB", "notes": "PFS"},
+        {"name": "cache", "lba": "6045696-8142847", "size": "1024 MB"},
+        {"name": "userdata", "lba": "8142848", "size": "1 sector"}
+      ],
+      "boot0": [
+        {"name": "hwi", "lba": "34-41", "size": "4 KB"},
+        {"name": "stage1", "lba": "42-297", "size": "128 KB"},
+        {"name": "stage2", "lba": "298-937", "size": "320 KB"},
+        {"name": "stage3", "lba": "938-953", "size": "8 KB"},
+        {"name": "bbss", "lba": "954-1209", "size": "128 KB"},
+        {"name": "sbl1r", "lba": "1210-1849", "size": "320 KB"},
+        {"name": "tzr", "lba": "1850-2873", "size": "512 KB"},
+        {"name": "rpmr", "lba": "2874-3385", "size": "256 KB"},
+        {"name": "sdir", "lba": "3386-3513", "size": "64 KB"},
+        {"name": "abootr", "lba": "3514-7609", "size": "2048 KB"}
+      ],
+      "notes": "boot0 build-info @0x2DEB0 (found via 'RIM BlackBerry Device'); boot GPT secure/insecure templates differ at byte 529 (ptable CRC)"
+    },
+    "partitions": [
+      {"name": "boot0", "size": "4 MB", "ro": true, "wp": "hardware B_PWR_WP_EN", "verified": true},
+      {"name": "boot1", "size": "4 MB", "ro": true, "wp": "hardware B_PWR_WP_EN", "verified": true},
+      {"name": "rpmb0", "size": "", "ro": false, "wp": "authenticated-only"},
+      {"name": "nvram0", "size": "4128768 B", "ro": false, "wp": "none", "notes": "contains NV 0x2019 unlock"},
+      {"name": "cal_work0", "size": "29360128 B", "ro": false, "wp": "none"},
+      {"name": "dmi0", "size": "1 MB", "ro": false, "wp": "none"},
+      {"name": "os0", "size": "", "ro": false, "wp": "none"},
+      {"name": "os1", "size": "", "ro": false, "wp": "none"},
+      {"name": "uda0 / user0", "size": "", "ro": false, "wp": "none", "notes": "DOS (see MCT os_mbr)"},
+      {"name": "radio0", "size": "", "ro": false, "wp": "none"},
+      {"name": "sd0", "size": "", "ro": false, "wp": "none"}
+    ],
+    "mounts": [
+      {"dev": "", "path": "/", "fstype": "qnx6", "opts": "ro,trusted"},
+      {"dev": "/dev/emmc/os0t179", "path": "/base", "fstype": "rcfs", "opts": "ro"},
+      {"dev": "/dev/emmc/radio0t179", "path": "/radio", "fstype": "rcfs", "opts": "ro"},
+      {"dev": "/dev/emmc/user0", "path": "/sdcard", "fstype": "qnx6", "opts": ""},
+      {"dev": "/dev/emmc/user0", "path": "/data", "fstype": "qnx6", "opts": "forceencrypt"},
+      {"dev": "/dev/emmc/cal_work0", "path": "/efs", "fstype": "qnx6", "opts": ""},
+      {"dev": "/dev/emmc/sd0", "path": "/accounts/1000/removable/sdcard", "fstype": "dos/fat32", "opts": ""}
+    ]
+  },
+  "boot": {
+    "chain": [
+      {"stage": "PBL (ROM)", "image": "rom", "verified_by": "fused key", "signed": true},
+      {"stage": "SBL1", "image": "boot0 stage1/2/3", "verified_by": "PBL", "signed": true},
+      {"stage": "BBSS", "image": "bbss", "verified_by": "SBL1", "signed": true},
+      {"stage": "stage1", "image": "stage1", "verified_by": "BBSS", "signed": true},
+      {"stage": "stage2", "image": "stage2", "verified_by": "stage1", "signed": true},
+      {"stage": "stage3", "image": "stage3", "verified_by": "stage2", "signed": true},
+      {"stage": "aboot (LK)", "image": "abootr", "verified_by": "stage3", "signed": true},
+      {"stage": "IFS (QNX)", "image": "boot/IFS", "verified_by": "aboot", "signed": true}
+    ],
+    "build_info": {
+      "offset_boot0": "0x2DEB0",
+      "hwid": "0x87002C0A",
+      "builder": "ec_agent",
+      "date": "Apr 10 2014",
+      "field18": "0xFFBD8 (rev_table/mct anchors)",
+      "secure_field8": 0
+    },
+    "verification": {
+      "secure_boot": true,
+      "root_of_trust": "Qualcomm PBL fused key",
+      "signing": "ECDSA P-256",
+      "dm_verity": "present (BB10)",
+      "anti_rollback": "NVRAM blocks 0x2819 OS / 0x2852 radio"
+    },
+    "write_protect": {
+      "boot0": "hardware EROFS (B_PWR_WP_EN)",
+      "boot1": "hardware EROFS (B_PWR_WP_EN)",
+      "rpmb0": "authenticated-only",
+      "user_area": "writable as root",
+      "oleksandr_nv_bits": "NV 0x2019 bits 42/43 set+persisted; updater-path gate only (live boot0 pwrite still EROFS)"
+    },
+    "imggen_artifacts": {
+      "new_boot0.img": "3896320 B (validated: hwi product=wolverine, stage1/2 QCOM D1DC4B84, stage3 ELF, bbss, sbl1r, tz/rpm/sdi ELF, abootr)",
+      "new_user.img": "411041792 B (nvram incl. unlock @0x10000, cal_work @0x400000, cal_backup @0x4000000, aboot @0x8000000, sbl1 @0x8400000, blog/prdid @0x8C/0x90, modem @0x14000000)",
+      "flash_vehicle": "open: (a) bb10mt QCFM pack with injected SBL1, or (b) autoloader.exe rebuild"
+    }
+  },
+  "security": {
+    "selinux": {"mode": "enforcing (Android runtime domains)", "notable_denials": 0},
+    "lsm": ["pathtrust", "bide", "selinux (android runtime)"],
+    "kernel": {"qnx": "QNX Neutrino 8.0.0 (BLACKBERRY-603C)", "hardening": ["grsec/PaX compiled in"]},
+    "verified_boot": {"secure_boot": true, "dm_verity": "present", "avb": false},
+    "write_gates": [
+      {"gate": "eMMC hardware boot WP (B_PWR_WP_EN)", "blocks": "boot0/boot1 write", "bypass": "MMC driver patch / desolder route"},
+      {"gate": "RPMB authenticated write", "blocks": "rollback/token storage tampering", "bypass": "none known"},
+      {"gate": "pathtrust", "blocks": "exec/mmap/module/firmware from untrusted filesystems", "bypass": "getroot btool whitelist (root only)"},
+      {"gate": "PBL signature verification", "blocks": "unsigned boot chain", "bypass": "passport_stage3 PBL debug exploit (tooling available, not flashed on this unit); oleksandr NV bits gate updater path"},
+      {"gate": "bb10mt container cannot carry boot0", "blocks": "boot0 write via .signed/QCFM lane", "bypass": "loader raw boot-region write op (MCT kind $2B) - pending"}
+    ]
+  },
+  "surface": {
+    "interfaces": [
+      {"name": "USB BootROM", "transport": "usb", "reachable_at": "edl", "notes": "0FCA:0001, listener-first ritual required"},
+      {"name": "USB RAM-loader", "transport": "usb", "reachable_at": "edl", "notes": "0FCA:8001"},
+      {"name": "USB OS-mode / RNDIS", "transport": "usb", "reachable_at": "qnx", "notes": "0FCA:8017, RNDIS MAC a6:e4:b8:2f:0d:8a; SSH via blackberry-connect tunnel"},
+      {"name": "microSD", "transport": "sd", "reachable_at": "qnx", "notes": "FAT32"}
+    ],
+    "devices": [
+      {"path": "/dev/emmc/boot0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "read (root); write EROFS"},
+      {"path": "/dev/emmc/boot1", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "read (root); write EROFS"},
+      {"path": "/dev/emmc/rpmb0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "auth-only"},
+      {"path": "/dev/emmc/nvram0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/dmi0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/os0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/os1", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/uda0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/dev/emmc/user0", "mode": "660", "owner": "root:Disk_Drivers", "selinux": "qnx", "reachable": "rw (root)"},
+      {"path": "/proc/boot/pathtrust", "mode": "750", "owner": "root:nto", "selinux": "qnx", "reachable": "root only"},
+      {"path": "/base/bin/__root", "mode": "4755", "owner": "root:nto", "selinux": "qnx", "reachable": "suid-0 when pathtrust-whitelisted"}
+    ],
+    "sockets": [],
+    "services": [
+      {"name": "btool", "domain": "root (autoroot + switchzone)", "binary": "/apps/sys.android.*.ns/native/system/xbin/btool"},
+      {"name": "hold_boot", "domain": "loader-hold entry", "binary": "/proc/boot/hold_boot (+ start_hold_boot.sh)"},
+      {"name": "updater chain", "domain": "root", "binary": "/base/bin/__upd, u_upd, g_upd, __cgi_update, __appupdatenotifier"},
+      {"name": "blupdater", "domain": "root install wrapper", "binary": "/sbin/blupdater (oleksandr root install; NOT boot updater)"}
+    ]
+  },
+  "findings": [
+    {
+      "id": "pathtrust-btool-whitelist-root",
+      "title": "getroot chain: btool pathtrust whitelist -> setuid __root -> interactive uid-0",
+      "component": "QNX pathtrust / btool autoroot",
+      "cve": null,
+      "reachable": "devuser (development mode)",
+      "impact": "root",
+      "status": "exploited (same method as Classic; /dev/emmc read, user area writable)"
+    },
+    {
+      "id": "bide-detection-gaps",
+      "title": "BIDE integrity sensors have 7 mapped detection gaps (G1-G7)",
+      "component": "drivers/bide (BB10 kernel)",
+      "cve": null,
+      "reachable": "requires kernel primitive",
+      "impact": "integrity-detection evasion",
+      "status": "analyzed (appendix E)"
+    },
+    {
+      "id": "passport-stage3-pbl-debug",
+      "title": "passport_stage3: MSM8974AA PBL debug mode bypasses pbl_authenticate_sbl",
+      "component": "Qualcomm PBL / RPM",
+      "cve": null,
+      "reachable": "loader/EDL lane",
+      "impact": "unsigned boot chain (device unlock)",
+      "status": "tooling built (GPL); not flashed on this unit in recorded sessions"
+    },
+    {
+      "id": "oleksandr-nv-unlock",
+      "title": "NV 0x2019 bits 42/43 persist but do not open OS-lane boot0 write",
+      "component": "libnvram / official-updater gate",
+      "cve": null,
+      "reachable": "root (on-device libnvram API)",
+      "impact": "unlock path analysis",
+      "status": "confirmed (live boot0 pwrite still EROFS)"
+    },
+    {
+      "id": "imggen-boot0-build",
+      "title": "imggen (py3 port) generated and validated Passport boot0+user images",
+      "component": "imggen / img3gen.py",
+      "cve": null,
+      "reachable": "offline (live dumps + official OS image)",
+      "impact": "Android-conversion tooling",
+      "status": "images validated; flash vehicle open; consumer-PBL fuse acceptance unproven"
+    },
+    {
+      "id": "mct-capture-pending",
+      "title": "Passport boot0-targeted raw write via loader (MCT kind $2B) not yet demonstrated",
+      "component": "RAM-loader flash path",
+      "cve": null,
+      "reachable": "EDL",
+      "impact": "boot0 ownership prerequisite",
+      "status": "open (device never held in BootROM long enough for read-only MCT capture)"
+    }
+  ]
+}

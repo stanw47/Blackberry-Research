@@ -1,0 +1,150 @@
+{
+  "access": {
+    "capabilities": {},
+    "level": "fastboot",
+    "levels_seen": [
+      "usb",
+      "fastboot"
+    ]
+  },
+  "boot": {
+    "oem_info": {
+      "BSN": "1164118297",
+      "Backup Version": "",
+      "Bootchain Software": "",
+      "Build": "ABL766",
+      "Debug Tokens (nvuser)": "",
+      "Debug Tokens (perm)": "",
+      "HLOS boot Signature Information": "",
+      "HLOS boot image Information": "",
+      "HLOS recovery Signature Information": "",
+      "HLOS recovery image Information": "",
+      "Hardware Information": "",
+      "ID": "APBI",
+      "IMEI": "990004630122962",
+      "Insecure": "false",
+      "MEID": "99000463012296",
+      "Name": "ec_agent",
+      "PIN": "0x2c48d4c8",
+      "Primary Version": "",
+      "Product": "bbb100",
+      "Product Identifiers": "",
+      "Security": "",
+      "Subvariant": "sprint",
+      "Tag": "sprint",
+      "Time": "20181127.133122",
+      "Type": "sfi",
+      "Variant": "usa",
+      "WP Type": "permanent"
+    },
+    "write_protect": {
+      "insecure": "false",
+      "wp_type": "permanent"
+    }
+  },
+  "devmap_version": "1.0",
+  "findings": [],
+  "generated_utc": "2026-10-05T16:50:00.524909Z",
+  "hardware": {
+    "peripherals": [],
+    "security_hw": []
+  },
+  "identity": {
+    "codename": "",
+    "manufacturer": "",
+    "model": "bbb100",
+    "os": {
+      "build": "ABL766",
+      "family": "unknown",
+      "patch": "",
+      "version": ""
+    },
+    "serial": "1164118297",
+    "soc": {
+      "hwid": "",
+      "name": ""
+    }
+  },
+  "provenance": {
+    "method": "live-probe",
+    "notes": "",
+    "sources": [
+      "usb",
+      "fastboot"
+    ]
+  },
+  "security": {},
+  "storage_layout": {
+    "mounts": [],
+    "partitions": []
+  },
+  "surface": {
+    "devices": [],
+    "fastboot_vars": {
+      "authboot_api_ver": "2.0",
+      "battery-soc-ok": "yes",
+      "battery-voltage": "4251000",
+      "bootmode": "PRODUCT_MODE",
+      "charger-screen-enabled": "1",
+      "device": "bbb100",
+      "display-panel": "",
+      "gpt_version": "0x0005",
+      "hlos-sig-tag": "sprint",
+      "hlos_signature.tkn": "NONE",
+      "hlos_unsigned.tkn": "disabled",
+      "is-password-set": "no",
+      "jdm_bsn": "AAKH11BPDKA00VV",
+      "kernel": "lk",
+      "max-download-size": "0x20000000",
+      "max-upload-size": "0x20000000",
+      "off-mode-charge": "1",
+      "partition-size:cache": "0x40000000",
+      "partition-size:oem": "0x20000000",
+      "partition-size:system": "0x120000000",
+      "partition-size:userdata": "0x5a7bfbe00",
+      "partition-type:cache": "ext4",
+      "partition-type:oem": "ext4",
+      "partition-type:system": "ext4",
+      "partition-type:userdata": "ext4",
+      "prd": "PRD-63118-003",
+      "product": "MSM8953",
+      "security": "enabled",
+      "serialno": "1164118297",
+      "subvariant": "sprint",
+      "variant": "usa",
+      "version": "0.5"
+    },
+    "interfaces": [
+      {
+        "ifaces": [
+          {
+            "class": "0xff",
+            "endpoints": [
+              "0x81",
+              "0x01"
+            ],
+            "num": 0,
+            "protocol": "0x03",
+            "subclass": "0x42"
+          },
+          {
+            "class": "0xff",
+            "endpoints": [
+              "0x82",
+              "0x02"
+            ],
+            "num": 1,
+            "protocol": "0xff",
+            "subclass": "0x02"
+          }
+        ],
+        "name": "fastboot (KEY2/KEYone)",
+        "pid": "0x8040",
+        "reachable_at": "usb",
+        "vid": "0x0fca"
+      }
+    ],
+    "services": [],
+    "sockets": []
+  }
+}

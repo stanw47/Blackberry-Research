@@ -1,0 +1,95 @@
+# Blackberry-Research collection index (machine-readable).
+# The hub toolchain/sync-hub.sh reads this to build the master table.
+# Keep in sync with each device repo's SUMMARY.md.
+
+collection:
+  hub: https://github.com/stanw47/Blackberry-Research
+  model: "hub + one repo per device"
+  visibility_default: private
+  standard: docs/STANDARDS.md
+  devmap_standard: devmap/STANDARD.md
+
+devices:
+  - id: classic
+    name: BlackBerry Classic
+    model: SQC100 (Q20)
+    soc: MSM8960
+    os: BB10 / QNX 10.3.3.3216
+    repo: https://github.com/stanw47/Blackberry-Classic-Research
+    visibility: private
+    access: [usb, fastboot, adb, qnx]
+    status: "rooted (uid-0), bootable; bootloader unlock HW write-protect gated"
+    headline: "real uid-0 via pathtrust !__root; boot0 WP permanent (B_PERM_WP_EN)"
+    has_devmap: true
+
+  - id: passport
+    name: BlackBerry Passport
+    model: SQW100
+    soc: MSM8974AA
+    os: BB10 / QNX
+    repo: https://github.com/stanw47/Blackberry-Passport-Research
+    visibility: private
+    access: [usb, fastboot, qnx]
+    status: "rooted; red-blink / non-bootable (recovery pending); imggen unlock path mapped"
+    headline: "imggen prototype-bootloader + BOOT_PARTITION_SELECT=0x5D1 debug path"
+    has_devmap: true
+
+  - id: priv
+    name: BlackBerry Priv
+    model: STV100
+    soc: MSM8992
+    os: Android 6.0.1 (AAW068)
+    repo: https://github.com/stanw47/Blackberry-Priv-Research
+    visibility: private
+    access: [usb, fastboot, adb]
+    status: "not rooted; authboot/RTAS gate decoded; no public kernel 0-day"
+    headline: "full authboot/RTAS + Widevine trustlet underflow analysis"
+    has_devmap: false
+
+  - id: keyone
+    name: BlackBerry KEYone
+    model: BBB100-3
+    soc: MSM8953
+    os: Android 7.1.1 (ABL766)
+    repo: https://github.com/stanw47/Blackberry-KeyOne-Research
+    visibility: public
+    access: [usb, fastboot, adb]
+    status: "locked; no software unlock; reachable KGSL/IOMMU kernel bug (DoS)"
+    headline: "CVE-2020-11261 / CVE-2023-33107-class KGSL IOMMU bug reachable from shell"
+    has_devmap: true
+
+  - id: key2
+    name: BlackBerry KEY2
+    model: BBF100-6
+    soc: SDM660
+    os: Android → LineageOS 22.2
+    repo: https://github.com/stanw47/Blackberry-Key2-Research
+    visibility: public
+    access: [usb, fastboot, adb]
+    status: "UNLOCKED + running LineageOS 22.2 (Android 15)"
+    headline: "bootloader unlock via CVE-2021-1931 (kibo); full LineageOS install"
+    has_devmap: true
+
+  - id: 9930
+    name: BlackBerry Bold 9930
+    model: 9930
+    soc: MSM8655
+    os: BBOS 7.1.0.1066
+    repo: https://github.com/stanw47/Blackberry-9930-Research
+    visibility: public
+    access: [usb]
+    status: "recon + code-signing boundary mapped; BootROM lane in progress"
+    headline: "RRT signature wall + BootROM (bblink) first-contact"
+    has_devmap: false
+
+  - id: q10
+    name: BlackBerry Q10
+    model: Q10 (prototype)
+    soc: MSM8960
+    os: BB10 / QNX
+    repo: https://github.com/stanw47/Blackberry-Q10-Research
+    visibility: private
+    access: [usb]
+    status: "device incoming (prototype); repo scaffolded"
+    headline: "prototype unit — high research value (unlocked bootloader likely)"
+    has_devmap: false

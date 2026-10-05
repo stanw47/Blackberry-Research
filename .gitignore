@@ -1,0 +1,50 @@
+# Exclude large/sensitive artifacts only if they end up re-added.
+# The curated bootloaders/ and analysis/ dirs are explicitly tracked and
+# should NOT be ignored (see below negations).
+
+# Scratch / secret material:
+.env
+.venv/
+__pycache__/
+*.pyc
+
+# SSH credentials / private keys - NEVER commit these (live device access):
+id_rsa
+id_rsa.pub
+*.pem
+known_hosts
+*id_*
+
+# Never commit large proprietary dumps or full system images if they reappear:
+system.raw
+userdata.raw
+factory.raw
+userdata_sparse.img
+*.raw
+NON-HLOS.bin
+*.zip
+
+# Large unpacked carrier work dir (multi-GB extracted flash images)
+/work/
+
+# Untracked session notes stay local (not published). The 55 historical
+# notes already tracked remain tracked; only future notes are hidden.
+/notes/
+
+# Extracted autoloader chunks (1.4 GB, exceeds GitHub's 100 MB file limit)
+/tools/autoloader_extract/
+
+# Local python tooling venv
+/tools/venv/
+
+# blackberry-connect tunnel log (contains device IP + password)
+/bb_connect.log
+
+# Keep everything else explicit — do not blanket-ignore *.mbn/*.img here;
+# the curated copies under bootloaders/ and resources/ are intentional.
+
+# AOSP reference binaries (re-downloadable; ~1.4 GB) - moved to device repos / not tracked
+/ref/
+
+# Local archive of the pre-split monorepo content (kept on disk, not pushed)
+/archive/

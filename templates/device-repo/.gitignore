@@ -1,0 +1,45 @@
+# --- BlackBerry device repo .gitignore (standard) ---
+# Never commit secrets / keys / device access material
+id_rsa
+id_rsa.pub
+*.pem
+*.key
+*.csk
+*.pfx
+known_hosts
+*id_*
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Large / re-downloadable binaries (see firmware/FETCH.md)
+firmware/
+*.zip
+*.7z
+*.rar
+*.exe
+*.raw
+*.bin
+*.img
+*.mbn
+*.elf
+*.simg
+*.tar
+*.gz
+system.img
+userdata.img
+NON-HLOS.bin
+
+# But KEEP small curated reference artifacts — uncomment per repo as needed:
+# !devmaps/*.json
+# !recon/*.txt
+
+# OS cruft
+Thumbs.db
+desktop.ini
+.DS_Store
