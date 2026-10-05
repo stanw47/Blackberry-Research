@@ -23,7 +23,7 @@
 | Device | Model | SoC | OS | Root | Unlock | Repo |
 |---|---|---|---|---|---|---|
 | **Classic** | SQC100-4 (Q20) | MSM8960 | BB10/QNX | rooted | HW-gated | [repo](https://github.com/stanw47/Blackberry-Classic-Research) |
-| **Passport** | SQW100-1 | MSM8974AA | BB10/QNX | rooted (bricked) | HW-gated | [repo](https://github.com/stanw47/Blackberry-Passport-Research) |
+| **Passport** | SQW100-1 | MSM8974AA | BB10/QNX | non-bootable | HW-gated | [repo](https://github.com/stanw47/Blackberry-Passport-Research) |
 | **Q10** (prototype) | Q10 | MSM8960 | BB10/QNX | pending | ? | [repo](https://github.com/stanw47/Blackberry-Q10-Research) |
 | **Priv** | STV100-1 | MSM8992 | Android 6 | none | locked | [repo](https://github.com/stanw47/Blackberry-Priv-Research) |
 | **KEYone** | BBB100-3 (Sprint) | MSM8953 | Android 7.1.1 | none | locked | [repo](https://github.com/stanw47/Blackberry-KeyOne-Research) |
