@@ -9,6 +9,7 @@
 |---|---|---|---|---|
 | **Classic** (Q20) | ✅ uid-0 | ⛔ HW-gated | 🔬 A11-on-QNX port | `pathtrust !__root` real root |
 | **Passport** | ✅ (bricked) | ⛔ HW-gated | 🔬 imggen path | `imggen` no-desolder path mapped |
+| **Passport (proto)** | ✅ vold-domain | ⛔ authboot | — | Dirty COW → vold root; boot chain dumped |
 | **Q10** (proto) | — | ? | — | device incoming |
 | **Priv** | ⛔ | ⛔ | ⛔ | authboot/RTAS decoded |
 | **KEYone** | ⛔ | ⛔ | ⛔ | reachable KGSL/IOMMU kernel bug |
@@ -25,6 +26,9 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
 - **Passport** — rooted but **red-blink / non-bootable**; `FS_DIRTY_ALL` is
   RPMB-backed; the no-desolder `imggen` Android path is mapped; recovery is the
   open task.
+- **Passport (Android prototype, `oslo`)** — alive; rooted in the `vold` domain
+  via Dirty COW + a patched `fsck_msdos` (non-persistent); boot/recovery/modem,
+  boot chain, kernel/ramdisk dumped; no autoloader exists — read-only specimen.
 - **Q10** — prototype unit incoming; repo scaffolded.
 - **Priv** — not rooted; `authboot`/RTAS2 + ECDSA boot gate fully decoded;
   Widevine-trustlet underflow analyzed; no public kernel 0-day.

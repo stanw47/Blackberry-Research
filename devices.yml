@@ -34,6 +34,18 @@ devices:
     headline: "imggen prototype-bootloader + BOOT_PARTITION_SELECT=0x5D1 debug path"
     has_devmap: true
 
+  - id: passport-android
+    name: BlackBerry Passport (Android prototype)
+    model: SQW100 / oslo
+    soc: MSM8974PRO-AA
+    os: native Android 5.1 (LMY47D, build AAA787)
+    repo: https://github.com/stanw47/Blackberry-Passport-Research
+    visibility: private
+    access: [usb, adb]
+    status: "alive; rooted in the vold domain (non-persistent, page-cache only); boot chain + kernel/ramdisk dumped; no autoloader exists"
+    headline: "production-signed prototype (same PKI as retail boot0); Dirty COW (CVE-2016-5195) via PTRACE_POKEDATA -> root in vold"
+    has_devmap: false
+
   - id: priv
     name: BlackBerry Priv
     model: STV100

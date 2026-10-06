@@ -24,6 +24,7 @@
 |---|---|---|---|---|---|---|
 | **Classic** | SQC100-4 (Q20) | MSM8960 | BB10/QNX | rooted | HW-gated | [repo](https://github.com/stanw47/Blackberry-Classic-Research) |
 | **Passport** | SQW100-1 | MSM8974AA | BB10/QNX | non-bootable | HW-gated | [repo](https://github.com/stanw47/Blackberry-Passport-Research) |
+| **Passport (Android prototype)** | `oslo` / oslorow | MSM8974PRO-AA | Android 5.1 (AAA787) | vold-domain root | authboot-gated | [repo](https://github.com/stanw47/Blackberry-Passport-Research) |
 | **Q10** (prototype) | Q10 | MSM8960 | BB10/QNX | pending | ? | [repo](https://github.com/stanw47/Blackberry-Q10-Research) |
 | **Priv** | STV100-1 | MSM8992 | Android 6 | none | locked | [repo](https://github.com/stanw47/Blackberry-Priv-Research) |
 | **KEYone** | BBB100-3 (Sprint) | MSM8953 | Android 7.1.1 | none | locked | [repo](https://github.com/stanw47/Blackberry-KeyOne-Research) |
@@ -66,6 +67,21 @@ Machine-readable index: [`devices.yml`](devices.yml).
 - **In progress:** device recovery.
 - **Future plans:** UART capture / chip replacement; then the no-desolder path.
 - **Repo:** [Passport](https://github.com/stanw47/Blackberry-Passport-Research)
+
+### Passport (Android prototype / `oslo`)
+- **Device details:** MSM8974PRO-AA · native Android 5.1 (LMY47D, build AAA787) ·
+  kernel 3.4.0-grsec-g0ea3e38 · retail-demo prototype; production-signed.
+- **Current status:** alive; **rooted in the `vold` domain** (non-persistent,
+  page-cache only); read-only historical specimen — no autoloader exists.
+- **Achieved:** Dirty COW (CVE-2016-5195) via `PTRACE_POKEDATA`; root in `vold`
+  (full generic `block_device` rw) by Dirty-COWing `/system/bin/fsck_msdos`;
+  boot/recovery/modem + aboot/sbl1/tz/rpm/persist/sdi/oem/pad dumped; kernel →
+  `vmlinux` (16.6 MB) + ramdisk; SELinux policy parsed (v26).
+- **In progress:** kernel LPE from the dumped `vmlinux` for unrestricted root
+  (secure partitions + complete block-level archive).
+- **Future plans:** finish the archive; keep the unit read-only.
+- **Repo:** [Passport](https://github.com/stanw47/Blackberry-Passport-Research)
+  (secondary device in the same repo)
 
 ### Q10 (prototype)
 - **Device details:** MSM8960 · BB10/QNX · prototype unit.
@@ -121,9 +137,10 @@ Machine-readable index: [`devices.yml`](devices.yml).
   **Oleksandr (bb10.root.sx)** documented the root/pathtrust ritual; **BerryCore
   (sw7ft)** provides a modern QNX userland (GCC/Python/Git, `qpkg`, a Chromium
   "Berry Browser" beta, an on-device LLM) for rooted devices; **balika011**
-  ported LineageOS 18.1 to the Passport (eMMC swap); **Zinwa** sells Android-14
-  retrofit kits (Q25 for the Classic, P26 for the Passport); **ProjectBerry**
-  archives stock ROMs.
+  ported LineageOS 18.1 to the Passport (eMMC swap), using the Android
+  prototypes documented by **Guizmox** (AAA249–AAC014) as the reference devices;
+  **Zinwa** sells Android-14 retrofit kits (Q25 for the Classic, P26 for the
+  Passport); **ProjectBerry** archives stock ROMs.
 - **Priv:** never rooted; audit plus hardware (eMMC swap) only; open
   software-root research (BBPriv-vibe-root) stalled on a physical-address leak.
 - **KEYone:** no public unlock/root; the community reaches debloat/FRP; TWRP
@@ -174,6 +191,8 @@ Machine-readable index: [`devices.yml`](devices.yml).
 - **BBAndroids (balika011, imggen, passport_stage3)** — prototype-bootloader unlock.
 - **BotchedRPR / kibo** and **Christopher Wade (Pen Test Partners)** — CVE-2021-1931.
 - **Qualcomm** — the KGSL/IOMMU and ABL CVEs documented here.
+- **CVE-2016-5195 (Dirty COW)** — the page-cache write primitive used to root the
+  Passport Android prototype.
 - The **XDA / CrackBerry / postmarketOS / bb10.root.sx** communities.
 
 ---
