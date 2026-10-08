@@ -63,6 +63,12 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
 
 ## Changelog (major updates)
 
+- **2026-10-08** — **KEYone unlock-denial archaeology closed**: full retail
+  line compared (AAK399 launch, AAL093, AAN355, ABL766) — `oem unlock` is
+  hard-denied in every public build, with byte-level function comparison;
+  launch→first-OTA delta = BIDE/ECC keypair-validation hardening. No retail
+  KEYone was ever unlockable; remaining software path is an aboot
+  memory-corruption primitive.
 - **2026-10-08** — **8700 added to the collection**: live USB enumeration via
   JavaLoader (read-only), full BBOS 4.1.0.194 module dump (**168/168**, incl.
   `net_rim_escreen*` + crypto/smartcard stack), event log + screenshot +
