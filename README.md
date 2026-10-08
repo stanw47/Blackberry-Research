@@ -23,7 +23,7 @@
 | Device | Model | SoC | OS | Root | Unlock | Repo |
 |---|---|---|---|---|---|---|
 | **Classic** | SQC100-4 (Q20) | MSM8960 | BB10/QNX | rooted | HW-gated | [repo](https://github.com/stanw47/Blackberry-Classic-Research) |
-| **Passport** | SQW100-1 | MSM8974AA | BB10/QNX | non-bootable | HW-gated | [repo](https://github.com/stanw47/Blackberry-Passport-Research) |
+| **Passport** | SQW100-1 | MSM8974AA | BB10/QNX | rooted | power-on WP | [repo](https://github.com/stanw47/Blackberry-Passport-Research) |
 | **Passport (Android prototype)** | `oslo` / oslorow | MSM8974PRO-AA | Android 5.1 (AAA787) | vold-domain root | authboot-gated | [repo](https://github.com/stanw47/Blackberry-Passport-Research) |
 | **Q10** (prototype) | Q10 | MSM8960 | BB10/QNX | pending | ? | [repo](https://github.com/stanw47/Blackberry-Q10-Research) |
 | **Priv** | STV100-1 | MSM8992 | Android 6 | none | locked | [repo](https://github.com/stanw47/Blackberry-Priv-Research) |
@@ -60,12 +60,18 @@ Machine-readable index: [`devices.yml`](devices.yml).
 - **Repo:** [Classic](https://github.com/stanw47/Blackberry-Classic-Research)
 
 ### Passport (SQW100-1)
-- **Device details:** MSM8974AA · BB10/QNX · WindermereEMEA.
-- **Current status:** rooted previously; **red-blink / non-bootable** (11011).
-- **Achieved:** driver forensics complete; `FS_DIRTY_ALL` shown RPMB-backed;
-  `imggen` no-desolder Android path mapped.
-- **In progress:** device recovery.
-- **Future plans:** UART capture / chip replacement; then the no-desolder path.
+- **Device details:** MSM8974AA · BB10/QNX · old board `BLACKBERRY-603C`;
+  current (replacement) board `BLACKBERRY-E538`, WindermereEMEA.
+- **Current status:** current unit **rooted (uid-0)** and bootable (reflashable
+  in ~3 min); old board parked in the `11011` red-blink state.
+- **Achieved:** driver forensics complete; **live `ext_csd` read — boot-partition
+  WP is power-on (`B_PWR_WP_EN`), not fused**; `imggen` no-desolder Android path
+  mapped; wipe/recovery ritual + exact `LDR_77` RAM-loader bring-up documented.
+- **In progress:** user-area-boot experiment (the no-`boot0` Android lane);
+  autoloader-compilation boot-region write; old-board recovery.
+- **Future plans:** stage the balika Android user area through the signed
+  updater + switch the boot source; UART capture / chip replacement on the old
+  board.
 - **Repo:** [Passport](https://github.com/stanw47/Blackberry-Passport-Research)
 
 ### Passport (Android prototype / `oslo`)

@@ -8,7 +8,7 @@
 | Device | Root | Unlock | Custom OS | Headline |
 |---|---|---|---|---|
 | **Classic** (Q20) | ✅ uid-0 | ⛔ HW-gated | 🔬 A11-on-QNX port | `pathtrust !__root` real root |
-| **Passport** | ✅ (bricked) | ⛔ HW-gated | 🔬 imggen path | `imggen` no-desolder path mapped |
+| **Passport** | ✅ uid-0 | 🔬 power-on WP | 🔬 user-area boot | live `ext_csd`: WP not fused; wipe ritual |
 | **Passport (proto)** | ✅ vold-domain | ⛔ authboot | — | Dirty COW → vold root; boot chain dumped |
 | **Q10** (proto) | — | ? | — | device incoming |
 | **Priv** | ⛔ | ⛔ | ⛔ | authboot/RTAS decoded |
@@ -23,9 +23,11 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
 - **Classic** — rooted (uid-0), bootable, recoverable; unlock blocked by
   permanent boot-partition write-protect; A11-on-QNX port in progress
   (bionic shim runs; binder + A11 userland are the frontier).
-- **Passport** — rooted but **red-blink / non-bootable**; `FS_DIRTY_ALL` is
-  RPMB-backed; the no-desolder `imggen` Android path is mapped; recovery is the
-  open task.
+- **Passport** — current (replacement) board **rooted (uid-0)**, bootable and
+  reflashable; live `ext_csd` shows the boot-partition WP is **power-on
+  (`B_PWR_WP_EN`), not fused**; no-desolder `imggen` path mapped; the
+  user-area-boot experiment is the open lane. Old board parked in `11011`
+  (`FS_DIRTY_ALL` RPMB-backed).
 - **Passport (Android prototype, `oslo`)** — alive; rooted in the `vold` domain
   via Dirty COW + a patched `fsck_msdos` (non-persistent); boot/recovery/modem,
   boot chain, kernel/ramdisk dumped; no autoloader exists — read-only specimen.
@@ -41,8 +43,10 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
 
 1. **authboot/RTAS2** makes software unlock impossible on locked Android
    BlackBerrys. → [cross-device/authboot-rtas.md](cross-device/authboot-rtas.md)
-2. **Permanent eMMC boot WP** (`B_PERM_WP_EN`) blocks boot-partition writes even
-   as root. → [cross-device/bbss-boot-wp.md](cross-device/bbss-boot-wp.md)
+2. **Power-on eMMC boot WP** (`B_PWR_WP_EN`, re-applied by the boot chain every
+   boot — *not* a fused `B_PERM_WP_EN`; live `ext_csd` reads on Classic + retail
+   Passport) blocks boot-partition writes as root when combined with the missing
+   CMD6 path. → [cross-device/bbss-boot-wp.md](cross-device/bbss-boot-wp.md)
 3. **EDL** is the universal bypass, gated by physical entry + a signed firehose
    programmer. → [cross-device/edl-firehose.md](cross-device/edl-firehose.md)
 4. **Legacy LK vs modern UEFI ABL** explains KEY2 unlock vs Priv/KEYone block.
@@ -55,6 +59,11 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
 
 ## Changelog (major updates)
 
+- **2026-10-08** — Passport: live `ext_csd` read (**boot WP is power-on, not
+  fused**); exact `LDR_77` RAM-loader bring-up; an interrupted BootROM handshake
+  arms the by-design security wipe (3-button reset + autoloader reflash ritual
+  documented); uid-0 restored; user-area-boot experiment spec + a working
+  cross-built QNX userland toolchain (`extcsd_probe`).
 - **2026-10-05** — Multi-repo restructure completed. Hub slimmed to a minimal
   index; per-device repos (Classic, Passport, Priv, Q10) created and populated;
   KeyOne/Key2 split by device; all session notes and non-note artifacts

@@ -30,8 +30,8 @@ devices:
     repo: https://github.com/stanw47/Blackberry-Passport-Research
     visibility: private
     access: [usb, fastboot, qnx]
-    status: "rooted; red-blink / non-bootable (recovery pending); imggen unlock path mapped"
-    headline: "imggen prototype-bootloader + BOOT_PARTITION_SELECT=0x5D1 debug path"
+    status: "current unit rooted (uid-0) + bootable; live ext_csd: boot-partition WP power-on (not fused); imggen no-desolder path mapped; user-area-boot experiment open; old board parked in 11011"
+    headline: "live ext_csd (B_PWR_WP_EN, not fused) + imggen prototype-bootloader path; exact LDR_77 RAM-loader bring-up; 3-button-reset wipe ritual"
     has_devmap: true
 
   - id: passport-android
