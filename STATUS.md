@@ -15,6 +15,7 @@
 | **KEYone** | ⛔ | ⛔ | ⛔ | reachable KGSL/IOMMU kernel bug |
 | **KEY2** | ✅ | ✅ | ✅ LineageOS 22.2 | CVE-2021-1931 unlock |
 | **Bold 9930** | ⛔ | — | — | RRT signing boundary mapped |
+| **8700** | — | 🔬 signing | — | Full BBOS 4.1 dump (168 modules) |
 
 Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
 
@@ -38,6 +39,9 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
   (CVE-2020-11261 / CVE-2023-33107 class) from unprivileged `shell` (DoS).
 - **KEY2** — **unlocked** via CVE-2021-1931 (`kibo`); running LineageOS 22.2.
 - **Bold 9930** — recon + RRT code-signing boundary mapped; BootROM lane in progress.
+- **8700** — alive; read-only USB via JavaLoader; complete BBOS 4.1.0.194 module
+  set preserved (168/168, incl. engineering screens + crypto stack); code-signing
+  boundary is the next track.
 
 ## Cross-device conclusions (pinned)
 
@@ -59,6 +63,10 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
 
 ## Changelog (major updates)
 
+- **2026-10-08** — **8700 added to the collection**: live USB enumeration via
+  JavaLoader (read-only), full BBOS 4.1.0.194 module dump (**168/168**, incl.
+  `net_rim_escreen*` + crypto/smartcard stack), event log + screenshot +
+  OS/BootROM metrics; new private repo `Blackberry-8700-Research`.
 - **2026-10-08** — Passport: live `ext_csd` read (**boot WP is power-on, not
   fused**); exact `LDR_77` RAM-loader bring-up; an interrupted BootROM handshake
   arms the by-design security wipe (3-button reset + autoloader reflash ritual

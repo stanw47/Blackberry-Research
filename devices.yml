@@ -94,6 +94,18 @@ devices:
     headline: "RRT signature wall + BootROM (bblink) first-contact"
     has_devmap: false
 
+  - id: 8700
+    name: BlackBerry 8700g
+    model: 8700 (Electron)
+    soc: Intel PXA901
+    os: BBOS 4.1.0.194
+    repo: https://github.com/stanw47/Blackberry-8700-Research
+    visibility: private
+    access: [usb]
+    status: "alive; read-only USB via JavaLoader; full 168-module OS dump preserved"
+    headline: "complete BBOS 4.1 module set (escreen + crypto) dumped; code-signing gate next"
+    has_devmap: false
+
   - id: q10
     name: BlackBerry Q10
     model: Q10 (prototype)

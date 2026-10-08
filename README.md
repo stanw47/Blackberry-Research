@@ -30,6 +30,7 @@
 | **KEYone** | BBB100-3 (Sprint) | MSM8953 | Android 7.1.1 | none | locked | [repo](https://github.com/stanw47/Blackberry-KeyOne-Research) |
 | **KEY2** | BBF100-6 (India/APAC, dual-SIM) | SDM660 | Android to LineageOS 22.2 | rooted | unlocked | [repo](https://github.com/stanw47/Blackberry-Key2-Research) |
 | **Bold 9930** | 9930 (Sprint) | MSM8655 | BBOS 7.1 | none | - | [repo](https://github.com/stanw47/Blackberry-9930-Research) |
+| **8700** | 8700g (Electron) | PXA901 | BBOS 4.1.0.194 | none | signing-gated | [repo](https://github.com/stanw47/Blackberry-8700-Research) |
 
 Machine-readable index: [`devices.yml`](devices.yml).
 
@@ -134,6 +135,20 @@ Machine-readable index: [`devices.yml`](devices.yml).
 - **In progress:** BootROM lane.
 - **Future plans:** BootROM-based custom-code path.
 - **Repo:** [9930](https://github.com/stanw47/Blackberry-9930-Research)
+
+### BlackBerry 8700g (Electron)
+- **Device details:** Intel PXA901 @ 312 MHz · BBOS 4.1.0.194 · 64 MB flash /
+  16 MB RAM · quad-band GSM/EDGE · PIN `0x23d410f8`.
+- **Current status:** alive; read-only USB access (JavaLoader); last active
+  June 2008 per event log.
+- **Achieved:** full module dump (**168/168**) including engineering screens
+  (`net_rim_escreen*`), crypto/smartcard stack and preloaded games; event log,
+  live screenshot, OS/BootROM metrics decoded.
+- **In progress:** code-signing model (running our own `.cod`); escreen
+  decompilation.
+- **Future plans:** 2G field tooling (cell-ID mapper, downgrade canary);
+  LLM thin-client experiments.
+- **Repo:** [8700](https://github.com/stanw47/Blackberry-8700-Research)
 
 ---
 
