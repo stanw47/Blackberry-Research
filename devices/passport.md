@@ -16,3 +16,10 @@ user-area-boot experiment is the open software lane.
 with the exact `LDR_77` loader. An **interrupted BootROM handshake arms the
 by-design security wipe** — recovery is a 3-button reset + ~3 min autoloader
 reflash (documented). Old board parked in `11011` (`FS_DIRTY_ALL` RPMB-backed).
+
+**stage3 payload exploit (tracked):** the imggen conversion kit's secure boot
+image ships BBAndroids' `passport_stage3` payload — it re-enters the PBL in
+debug mode (`BOOT_PARTITION_SELECT=0x5D1`) with a replacement PBL that **skips
+SBL authentication** and loads the GPT-selected `bbss` partition (type GUID
+`…251C3E99`). Decoded + tracked in the Passport repo
+(`notes/session31-stage3-payload-exploit.md`).

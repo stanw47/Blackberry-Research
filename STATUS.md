@@ -63,7 +63,11 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
   fused**); exact `LDR_77` RAM-loader bring-up; an interrupted BootROM handshake
   arms the by-design security wipe (3-button reset + autoloader reflash ritual
   documented); uid-0 restored; user-area-boot experiment spec + a working
-  cross-built QNX userland toolchain (`extcsd_probe`).
+  cross-built QNX userland toolchain (`extcsd_probe`). Three-way component diff
+  (stock BB10 / Balika kit / prototype Android): kit `stage1`/`stage2` are
+  byte-identical to the prototype's secure `bbss`/`sbl1r`; **`stage3` payload
+  exploit decoded** (PBL debug mode → skips SBL auth, loads the GPT `bbss`
+  partition) and tracked; candidate insecure boot image assembled.
 - **2026-10-05** — Multi-repo restructure completed. Hub slimmed to a minimal
   index; per-device repos (Classic, Passport, Priv, Q10) created and populated;
   KeyOne/Key2 split by device; all session notes and non-note artifacts
