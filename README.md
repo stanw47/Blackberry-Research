@@ -180,6 +180,7 @@ Machine-readable index: [`devices.yml`](devices.yml).
 | BB10 root ritual (`pathtrust`/`btool`/`__root`) | Classic, Passport, Q10 | [cross-device/bb10-root-pathtrust.md](cross-device/bb10-root-pathtrust.md) |
 | Legacy LK `aboot` vs modern UEFI ABL | all Android | [cross-device/lk-vs-abl.md](cross-device/lk-vs-abl.md) |
 | EDL / firehose | all Qualcomm | [cross-device/edl-firehose.md](cross-device/edl-firehose.md) |
+| Bootloader crack catalog + KEYone overlap map | all devices | [cross-device/bootloader-crack-catalog.md](cross-device/bootloader-crack-catalog.md) |
 | QNX `vtnvfs` / `/nvram` token storage | Classic, Passport, Priv, KEYone | [cross-device/qnx-vtnvfs.md](cross-device/qnx-vtnvfs.md) |
 
 **Device-map standard:** [devmap/STANDARD.md](devmap/STANDARD.md) · maps in
