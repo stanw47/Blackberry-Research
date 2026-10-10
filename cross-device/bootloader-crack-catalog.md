@@ -199,6 +199,75 @@ Ranked shortlist:
 
 ---
 
+## 6. Extension: PBL / Sahara (bootrom) thread
+
+The PBL (Primary Bootloader, in SoC ROM) exposes the Sahara/Firehose protocol
+in EDL mode. Two public vulnerability generations:
+
+- **2022 (C. Wade, QPSS "Breaking Mobile Bootloaders")**: during Sahara's
+  chunked Loader upload, the PBL's stored **public-key hash (used to verify
+  images) could be overwritten with pointers** -> Secure Boot bypass. "Most
+  64-bit Snapdragon chips tested were vulnerable, SDM765 was not." The slides
+  note "most low-level bootloaders don't support any patching, and will remain
+  vulnerable" - i.e. shipped devices stay exposed. No CVE assigned; requires
+  low-level PBL knowledge and EDL entry.
+- **2026 (CVE-2026-25262, May 2026 bulletin)**: "Write-what-where Condition in
+  Primary Bootloader - memory corruption while processing a crafted ELF file
+  in the Primary Bootloader" (Boot, local, critical; SM8450-era research).
+  Shows the class keeps recurring in new PBL generations.
+
+MSM8953 applicability: the 2022 bug's scope is "most 64-bit Snapdragons" -
+MSM8953 (2016) predates the fix and is a candidate, but **confirmation
+requires a PBL dump**, which needs EDL (or glitching). Combined with the hub's
+EDL findings (`edl-firehose.md`): the KEYone's EDL is **hardware-entry only**
+(software EDL disabled), and a **signed MSM8953 firehose programmer exists**
+(extracted from the ABL766 autoloader). So the full chain
+`testpoints -> EDL -> PBL key-overwrite -> unsigned loader -> patched
+bootloader` is plausible but gated by physical access. Recorded as the
+highest-ceiling path if hardware access ever becomes available.
+
+## 7. Extension: LK CVE enumeration (against ABL766)
+
+Known Little Kernel (`emmc_appsboot.mbn`) CVEs to check against the KEYone
+build tags (AAK399 -> AAL093 -> AAN355 -> ABL766):
+
+| CVE | Class | Notes |
+|---|---|---|
+| CVE-2013-2598 | boot-image load-destination overwrite of sig-check code | audited; not exposed in BB builds (`lk-vs-abl.md`) |
+| CVE-2014-0973 | `image_verify` stack overflow via crafted boot image | audited; not exposed |
+| CVE-2014-4325 | `cmd_boot` fastboot bypass (boot arbitrary kernel) | authboot-gated on BB builds |
+| CVE-2016-3850 | integer overflow in `aboot.c` header parsing (Nexus 5/5X/6P/7) - fixed in LK `030371d4` | BB builds carry the guard strings (our notes/50-52); 2018 diffs = refinement |
+
+Also in the same family: the community "patched aboot" technique (flash an
+aboot image with fastboot/oem-unlock enabled) - works only where SBL does not
+verify aboot; **not applicable to KEYone** (SBL1 verifies aboot, and ARB
+rejects older versions - observed, `notes/51`).
+
+Recurring source to mine: Qualcomm monthly bulletins, "Boot" technology-area
+entries (e.g. CVE-2023-33017 UEFI ListVars overflow; CVE-2026-25262 PBL;
+CVE-2021-1931 ABL). MSM8953 alone has ~355 recorded CVEs (cvefeed), four
+CISA-actively-exploited - worth a periodic sweep for kernel/firmware
+primitives.
+
+## 8. Extension: what the KEY2 patches map to on KEYone
+
+| KEY2 (kibo patch) | What it defeats | KEYone equivalent (from our notes) |
+|---|---|---|
+| `switch_bootmode(1,0)` trigger | writes bootmode 1 (FACTORY) to RPMB | bootmode is RPMB-backed on KEYone too; `oem set-factory-mode` is authboot/BTAS-denied (`notes/53`) |
+| `BbryWipeLib` defuse | factory-transition factory-wipe | `securewipe` (`BbryWipeLib` sibling) - un-gated, wipes boot/recovery sig records (observed live) |
+| `BbryKeys` disable | BB key/attestation check | authboot token keys (`notes/49`) |
+| "Flashing unlock is not allowed" patch | OEM unlock policy check | authboot whitelist + `flash` denials (all builds) |
+| RTAS skip | RTAS/BTAS authorization | `getvarp` / `oem securewipe` / `debugtokens` BTAS gates (`authboot-rtas.md`) |
+| Boot counter `0xffff` | factory-mode expiry | bootmode record expiry (RPMB) |
+
+Conclusion: the KEY2 unlock is a RAM-patch of the *same architectural
+components* we have already mapped on the KEYone - the difference is only that
+the KEY2 had a bootloader memory-corruption bug (CVE-2021-1931) to run the
+patches, while the KEYone must reach the same components through TZ services
+after a kernel root, or through hardware (engineering bootloader / EDL).
+
+---
+
 ## 5. References
 
 - KEY2 unlock dissection: `Blackberry-Key2_Research/docs/KEY2-unlock-mechanism.md`
