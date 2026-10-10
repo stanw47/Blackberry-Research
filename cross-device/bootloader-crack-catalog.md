@@ -266,6 +266,32 @@ the KEY2 had a bootloader memory-corruption bug (CVE-2021-1931) to run the
 patches, while the KEYone must reach the same components through TZ services
 after a kernel root, or through hardware (engineering bootloader / EDL).
 
+## 9. Extension: MSM8953 TZ / QSEE CVE cluster (post-2018 gap)
+
+KEYone patch level is **2018-12-05** (ABL766). SD625 is listed as affected on
+several TZ-class CVEs published *after* that date, i.e. likely unpatched on
+this device:
+
+| CVE | Area | Description | Published |
+|---|---|---|---|
+| CVE-2017-18302 | TZ / QSEE | crafted HLOS client modifies a structure passed to a QSEE app between TOCTOU -> **arbitrary writes to TZ kernel memory** (SD 625 affected) | 2018-09 (patched by 2018-12?) |
+| CVE-2017-18292 | TZ / Widevine | non-secure app can restart TZ via repeated Widevine app API calls | 2018-10 |
+| CVE-2017-18124 | Secure boot | uint8-ptr addition overflow during secure boot | 2018-10 |
+| CVE-2018-13910 | TZ | out-of-bounds access in TZ (invalid index checked against DDR); SD 625 affected | **2019-06** -> unpatched on 2018-12 device |
+| CVE-2019-2274 | TZ / Core | improper access control for RPU write access from secure processor | **2019-12** -> unpatched |
+
+Why it matters: BlackBerry stores bootmode (unlock state) in **RPMB**, written
+through TZ/keymaster services. A TZ memory-corruption or access-control
+primitive on the pre-2019 TZ firmware could write the RPMB bootmode record or
+the wipe-defusal state directly - the same end state the KEY2 reached via
+bootloader RAM patching. Check the shipped `tz.mbn` version in the ABL766
+autoloader against the patch dates, then mine 2019-2021 Qualcomm "TZ Secure
+OS" / "Boot" bulletin entries for MSM8953.
+
+Sources to sweep: Qualcomm monthly bulletins (technology areas "Boot",
+"TZ Secure OS", "Core"), Android security bulletins' Qualcomm closed-source
+sections (2018-09 through 2021), and CVE databases filtered by MSM8953.
+
 ---
 
 ## 5. References
