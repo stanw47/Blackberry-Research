@@ -83,6 +83,43 @@ at 0xf9d5a10 carries index `4294967295` and an ASN.1 OID
 5. Response: `RTAS verify [NV sig] response` -> verifier 0xf953e68 (the
    overflow; see the catalog section 11) -> ECDSA verify 0xf965240.
 
+## Control packet format (reconstructed, session 6)
+
+The mux control path is a packet dispatcher around buffer `0xfa7c3bc` (0x800
+rx slot). Control packet layout (as parsed by the handler):
+
+```
+[+0] u8  opcode          (outer dispatch, 20-case table @0xf933500)
+[+1] u8  channel/tool index (work-level slot, 0x170-byte entries @0xfa79908)
+[+2] u8  ?              ([+3] is a param; copied to slot[+0xb4])
+[+3] u8  param
+[+4] u16 length         (payload = len - 6)
+[+6] u16 command id     (inner dispatch, 18-case table @0xf9336a0)
+[+8..] payload
+```
+
+Inner command table (switch on `[r6+6]`, values 1..0x12):
+- `1`  -> 0xf933c94: hex/ASCII-decodes a 0x14-byte **channel name** from the
+  payload and looks it up in the work-level table (0x14 slots) - the
+  OPEN_REQUEST handler.
+- `4`  -> 0xf933c14: **AUTH RESPONSE** ("Mux: %s: Authentication response
+  len: %d, blob len: %d, sig len: %d"; "Not enough data passed to
+  authentication response") -> rtas verify path.
+- `10` -> 0xf933c74: generic status response.
+- rest -> empty/default responses (some drop to "Unknown control message").
+
+Outer dispatch highlights (table @0xf933500, dispatch on `[r6+0]`):
+- case 3 (0xf933ac4): iterate registered channels, send state events.
+- case 9 (0xf933b10): work-slot state==5 -> forward to rtas.
+- 0xf933528 flow (tool authorization): `FUN_0f93e8bc()` (BBSS sec-config
+  state, must be 0) + slot check -> `f931a90` -> on success **writes work
+  slot state byte +0x70 = 6** (0xf9335b0) and replies {0x10, len 4} -
+  this is the "authboot channel opened" transition that unlocks
+  `rtas_cmd_authorization_check` (permission types 2..10).
+- 0xf933f20 flow (response verify): `f954414` (rtas verify response) with
+  the slot ctx (+0xc4) and the packet payload ([r6+4] len) -> on success
+  sets slot state 6 and bumps the event counter (0xfa7b68c).
+
 ## Exploit relevance
 
 - The nv_sig response verifier is the same vulnerable shape as the KEYone's
