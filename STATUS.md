@@ -38,11 +38,12 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
   deterministic if the 2016 TZ lacks the RNG service), **nv_sig response stack
   overflow @0xf953e68** (canary-gated), **Mux auth protocol mapped**
   (`cross-device/authboot-mux-protocol.md`); live canary-ladder probe pending.
-- **KEYone** — locked; KGSL UAF lane (CVE-2021-1905) live: dangling-PTE +
-  page-free proven repeatedly; poolfill boosted dangling hits 15x (15/128);
-  **msm-3.18 kgsl_pool.c decoded: freed pages always enter an unbounded
-  FIFO pool** (no max check) → PTE-page reclaim impossible; new build:
-  pressure-touch drain (shrinker → buddy) + KGSL spray for pool-head reclaim.
+- **KEYone** — locked; KGSL UAF lane (CVE-2021-1905) live: **GPU write into
+  reclaimed page WON and reliable** (pressure-drain recipe: bulk-free flavor
+  shaper → 16MB pressure touch drains the unbounded kgsl pool via shrinker →
+  destroy → spray; **19/23 dangling rounds hit, alias buf #0**; clean 300-round
+  completion). Next: reclaim the freed page as a KGSL pagetable/ringbuffer
+  (make_ctx pool-head take) and edit PTE entries → arbitrary-phys mapping.
 - **KEY2** — **unlocked** via CVE-2021-1931 (`kibo`); running LineageOS 22.2.
 - **Bold 9930** — recon + RRT code-signing boundary mapped; BootROM lane in progress.
 - **8700** — alive; read-only USB via JavaLoader; complete BBOS 4.1.0.194 module

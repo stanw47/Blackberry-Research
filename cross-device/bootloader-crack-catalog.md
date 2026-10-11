@@ -202,12 +202,22 @@ What the catalog + our own work jointly say:
 Ranked shortlist:
 
 1. Finish KGSL UAF -> kernel root (`notes/58`) -> drive TZ services for
-   RPMB bootmode FACTORY + wipe defusal.
+   RPMB bootmode FACTORY + wipe defusal. **Status 2026-10-11 night: the
+   primitive "GPU write into a reclaimed page" is now reliable (19/23
+   dangling rounds, alias buf #0; pressure-drain recipe) - the escalation
+   step (reclaim as KGSL pagetable/ringbuffer, forge PTEs -> arbitrary phys)
+   is the active frontier.**
 2. Obtain/diff engineering-unit bootloader images (KEYone, Motion, sibling
    TCL builds); eMMC path if needed (Priv/Passport precedent).
 3. Keep enumerating LK-era CVEs (fastboot command handling, partition
    parsers) against ABL766 with the existing instruction-level diff tooling.
 4. EDL reachability + programmer whitelist check.
+5. **Priv canary test** (new): drive the Priv's Mux auth channel
+   (`cross-device/authboot-mux-protocol.md`, session 6 dispatcher decode)
+   to a live canary-ladder on the nv_sig overflow; if the Priv's TZ RNG
+   service is absent, the fallback LCG canary is deterministic -> first
+   LK-generation bootloader unlock. Technique transfers to the KEYone only
+   if a KEYone canary leak appears (its canary is TZ-random).
 
 ---
 
