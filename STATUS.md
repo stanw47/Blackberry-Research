@@ -34,9 +34,15 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
   boot chain, kernel/ramdisk dumped; no autoloader exists — read-only specimen.
 - **Q10** — prototype unit incoming; repo scaffolded.
 - **Priv** — not rooted; `authboot`/RTAS2 + ECDSA boot gate fully decoded;
-  Widevine-trustlet underflow analyzed; no public kernel 0-day.
-- **KEYone** — locked; no software unlock; reachable KGSL/IOMMU bug
-  (CVE-2020-11261 / CVE-2023-33107 class) from unprivileged `shell` (DoS).
+  session5: **canary mechanism traced** (SCM random + unseeded LCG fallback →
+  deterministic if the 2016 TZ lacks the RNG service), **nv_sig response stack
+  overflow @0xf953e68** (canary-gated), **Mux auth protocol mapped**
+  (`cross-device/authboot-mux-protocol.md`); live canary-ladder probe pending.
+- **KEYone** — locked; KGSL UAF lane (CVE-2021-1905) live: dangling-PTE +
+  page-free proven repeatedly; poolfill boosted dangling hits 15x (15/128);
+  **msm-3.18 kgsl_pool.c decoded: freed pages always enter an unbounded
+  FIFO pool** (no max check) → PTE-page reclaim impossible; new build:
+  pressure-touch drain (shrinker → buddy) + KGSL spray for pool-head reclaim.
 - **KEY2** — **unlocked** via CVE-2021-1931 (`kibo`); running LineageOS 22.2.
 - **Bold 9930** — recon + RRT code-signing boundary mapped; BootROM lane in progress.
 - **8700** — alive; read-only USB via JavaLoader; complete BBOS 4.1.0.194 module
@@ -63,6 +69,12 @@ Legend: ✅ done · ⛔ blocked · 🔬 research · ? unknown
 
 ## Changelog (major updates)
 
+- **2026-10-11** — **Bootloader-crack catalog expanded** (A9/A10, B12-B16,
+  C7, G6-G9 rows; new sections 10 "canary genealogy" and 11 "BlackBerry
+  authboot surface": nv_sig overflow family across Priv/KEYone, Mux vs
+  pcauthtool protocols, Motorola TZ→QFuse archetype G6/G7, Quadrooter-era
+  DTEK exposure G9); new `cross-device/authboot-mux-protocol.md`; STATUS
+  Priv/KEYone rows updated to session5 + the KGSL poolfill/pressure findings.
 - **2026-10-08** — **KEYone unlock-denial archaeology closed**: full retail
   line compared (AAK399 launch, AAL093, AAN355, ABL766) — `oem unlock` is
   hard-denied in every public build, with byte-level function comparison;

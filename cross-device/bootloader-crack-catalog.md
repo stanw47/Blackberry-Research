@@ -25,6 +25,8 @@ xperable, checkm8, etc.), the wall-of-shame project, and our own device work
 | A6 | SSTIC 2017 (F. Basse) | Samsung download mode | Odin/download-mode bug -> arbitrary code with physical access; defeated lockscreen/reactivation lock. |
 | A7 | PBL Sahara (2022, C. Wade) | Qualcomm PBL | USB update path let signing-key hashes in RAM be overwritten -> Secure Boot bypass; most 64-bit SDMs. |
 | A8 | Custom AVB keys | Google + few OEMs | Not a bug: user AVB keys let a custom OS boot with a *locked* bootloader. |
+| A9 | CVE-2015-8888 | Qualcomm LK `aboot.c` | Integer overflow in sparse-image header (block count x block size), Nexus 5; fixed 1321f34f. |
+| A10 | Qualcomm fastboot cmd 0-day (Jan 2026) | Qualcomm edk2 ABL | Command-line processing flaw in edk2 fastboot; "vast majority of Qualcomm SoCs" per XDA thread; used for Xiaomi 17 (SD 8 Gen 5) / POCO F8 Ultra unlocks alongside GBL/efisp (A4); reported to Qualcomm. |
 
 ### B. Memory corruption in boot stacks
 
@@ -41,6 +43,11 @@ xperable, checkm8, etc.), the wall-of-shame project, and our own device work
 | B9 | EDLUnlock | Xiaomi MSM89xx | EDL-mode exploit path -> unlock (Mi A1 era). |
 | B10 | Xiaomi EDL/Firehose engineering-ABL route | Xiaomi SDM8xx | Signed engineering ABL + EDL programmer -> downgrade to unlockable state (non-Kioxia UFS). |
 | B11 | V35 engineering bootloader | LG G7/V35/V40 | Flashed a signed *engineering* ABL from a sibling model -> `fastboot oem unlock` works. Cross-model artifact reuse. |
+| B12 | CVE-2017-8273 | Qualcomm LK fastboot | Buffer overflow in fastboot `boot` command path when verified boot is disabled (length > boot image buffer); all CAF 2017. |
+| B13 | CVE-2018-5854 | Qualcomm LK fastboot | Stack-based buffer overflow in fastboot; all CAF Android/MSM releases (Code Aurora Jun 2018 bulletin). Same family as B12 - the recurring LK fastboot overflow class. |
+| B14 | CVE-2017-15828 | Qualcomm LK keystore | Integer overflow accessing the LK keystore -> buffer overflow (fixed 86ea9e5d). |
+| B15 | amonet (2019) | Fire HD 8 2018 (karnak) | Chain: MTK BootROM exploit + a LittleKernel bootloader exploit (xyzz); LK-side overflow -> unlock/downgrade. |
+| B16 | CVE-2025-36907 | Qualcomm ABL | Heap buffer overflow via USB fastboot -> local EoP *after* unlock (user interaction); post-1931 ABL class keeps producing bugs. |
 
 ### C. Crypto & token flaws
 
@@ -52,6 +59,7 @@ xperable, checkm8, etc.), the wall-of-shame project, and our own device work
 | C4 | Pixel unlock token accident | Google | OTAConfigNoZeroTouchPrebuilt issued unlock tokens for Verizon-locked Pixel 1s for a few days -> permanent unlock. |
 | C5 | Intel Boot Guard key leak | MSI (Binarly 2023) | Boot Guard *private* signing key shipped inside firmware images. |
 | C6 | Leaked signed artifacts | Many OEMs | Samsung ENG boot images (Odin-flashable, no signature checks), Nokia engineering files, Xiaomi eng ABL, **BlackBerry Priv/Passport engineering-device bootloader**. |
+| C7 | Motorola unlock-data format | Motorola CID | `fastboot oem get_unlock_data` returns `1A23457698214365`-style prefix + hex payload; `debug_token` virtual partition inside CID; server-side signing only, no public keygen. |
 
 ### D. Rollback / downgrade tricks
 
@@ -91,6 +99,10 @@ xperable, checkm8, etc.), the wall-of-shame project, and our own device work
 | G3 | enso | PS Vita | Kernel exploit -> patch `boot_config` persistently. |
 | G4 | BootMii as boot2 | Nintendo Wii | boot1/boot2 verification weakness -> replacement boot2. |
 | G5 | WPInternals | Windows Phone | Lumia UEFI Secure Boot policy bypass (test-signed/flashable EFIESP). |
+| G6 | **Dan Rosenberg 2013 (CVE-2013-3051)** | Motorola MSM8960 | Kernel root -> crafted SMC 0x9/0x2 calls exploiting a TZ kernel arbitrary-write -> QFuse blow -> bootloader unlocked (Razr HD/M/Atrix HD). **The archetype of our KEYone plan: kernel root -> TZ -> persistent unlock state.** |
+| G7 | bits-please "Unlocking the Motorola Bootloader" (2016) | Moto X 2nd Gen | TZ kernel code exec (CVE-2015-6639 class) -> lift restrictions on `tzbsp_qfprom_write_row` -> blow the unlock QFuse directly from a TrustZone exploit. |
+| G8 | ALEPH-2017024 (2017) | Google Nexus 6 (shamu) | Root (CVE-2016-10277) + block-device writes -> invalidate the `sp` partition entry (HMAC'd by TEE) -> a **re-locked** bootloader reverts to unlocked. |
+| G9 | Quadrooter (2016) | Qualcomm (all, incl. DTEK50/DTEK60) | 4-kernel-bug chain (CVE-2016-2503 ashmem, **CVE-2016-2504 KGSL UAF**, CVE-2016-2059, CVE-2016-5340); **DTEK50/DTEK60 shipped vulnerable** (reviews confirmed). Same KGSL driver family as the KEYone lane. |
 
 ### H. Shims & unlock-state forgery
 
@@ -107,12 +119,12 @@ xperable, checkm8, etc.), the wall-of-shame project, and our own device work
 |---|---|---|---|---|---|
 | BBOS 8700/9000s | RIM | ARM9/ARM11 | BBOS | proprietary | JavaLoader dumps; no unlock concept |
 | Z10 / Q10 / Z30 / Classic / Passport (BB10) | RIM/BlackBerry | OMAP4470 / MSM8960 family | QNX | proprietary | Oleksandr modded-autoloader **root** (software); Passport: hardware eMMC + engineering BL (F1) |
-| Priv (STV100-*) | RIM/BlackBerry | MSM8992 | 3.10.x | **LK + authboot** | F1 only (eMMC + engineering bootloader) |
-| DTEK50 (STH100-*) | TCL (Alcatel Idol 4S rebrand) | MSM8952 | 3.10.x | LK + authboot | none public |
+| Priv (STV100-*) | RIM/BlackBerry | MSM8992 | 3.10.x | **LK + authboot (Mux protocol)** | F1 only (eMMC + engineering bootloader); session5: canary = SCM random w/ deterministic LCG fallback; nv_sig-response stack overflow present but canary-gated |
+| DTEK50 (STH100-*) | TCL (Alcatel Idol 4S rebrand) | MSM8952 | 3.10.x | LK + authboot | none public; shipped Quadrooter-vulnerable (kernel lane) |
 | DTEK60 (BBA100-*) | TCL (TCL 950 rebrand) | MSM8996 | 3.10/3.18 | LK + authboot | none public |
-| **KEYone (BBB100-*)** | **TCL (global); Optiemus (India)** | **MSM8953** | **3.18.31-perf-gf38c8fb** | **LK + authboot** | none; engineering units exist (unlocked BL); LK CVEs audited, not exposed (`lk-vs-abl.md`) |
+| **KEYone (BBB100-*)** | **TCL (global); Optiemus (India)** | **MSM8953** | **3.18.31-perf-gf38c8fb** | **LK + authboot (pcauthtool protocol)** | none; engineering units exist (unlocked BL); LK CVEs audited, not exposed (`lk-vs-abl.md`); KGSL kernel lane active (`notes/58`+)
 | Motion (BBD100-*) | TCL | MSM8953 | 3.18.x | LK + authboot | none public |
-| KEY2 (BBF100-*) | TCL | SDM660 | 4.4.78 -> Lineage 4.4.302 | **UEFI ABL** (ACQ160/ACI448) | **CVE-2021-1931 (kibo / Windows tool) -> FACTORY unlock + LineageOS 22.2** |
+| KEY2 (BBF100-*) | TCL | SDM660 | 4.4.78 -> Lineage 4.4.302 | **UEFI ABL** (ACQ160/ACI448) | **CVE-2021-1931 (kibo / Windows tool) -> FACTORY unlock + LineageOS 22.2**; XDA 2026 guide: flash ACQ160 TWICE (botched A/B), remove Google accounts first |
 | KEY2 LE (BBE100-*) | TCL | SDM636 | 4.4.x | UEFI ABL (ACT575) | CVE-2021-1931 (LE path) |
 | Evolve / Evolve X | Optiemus (India) | SD450/636 class | 4.x | LK/ABL mix | status unknown |
 
@@ -291,6 +303,63 @@ OS" / "Boot" bulletin entries for MSM8953.
 Sources to sweep: Qualcomm monthly bulletins (technology areas "Boot",
 "TZ Secure OS", "Core"), Android security bulletins' Qualcomm closed-source
 sections (2018-09 through 2021), and CVE databases filtered by MSM8953.
+
+---
+
+## 10. Bootloader stack-canary genealogy (what makes B-class bugs hard)
+
+Most B-class (memory-corruption) bootloader exploits assume *no* stack
+protection. Qualcomm's LK added stack protector support over time; the
+BlackBerry LK builds ship it on. Measured facts from our builds:
+
+| Generation | Build | Canary source | Determinism |
+|---|---|---|---|
+| KEYone ABL766 (2018) | LK ARM32 | `get_canary()` -> TZ SCM random ("scm_call for random failed !!!"); global guard cached once at boot | **Random per boot** (live oracle: low16 fixed 0x0054 by luck, high16 random) |
+| Priv AAW068 (2016) | LK ARM32 | Same design: `init_canary()` -> SCM svc-0xa (two variants selected by a secure-canary probe flag); LCG fallback | SCM random, **but fallback LCG (`state*0x3039+0x11`) has NO seed write in the image -> BSS-zero start -> deterministic (0x11, 0x3284A, ...) if the 2016 TZ lacks the RNG service** (unverified live) |
+| Stock CAF LK 2013-2015 | LK ARM32 | Often built WITHOUT stack protector at all (pre-2016 CAF branches) | n/a -> B1/B12/B13-class bugs fully exploitable |
+
+Implications for the KEYone/Priv/Motion:
+- The KEYone canary is TZ-random; the nv_sig overflow (`notes/60`) is
+  canary-walled unless a canary leak primitive appears.
+- The Priv canary is random **if and only if its TZ answers the SCM RNG
+  call**; a live ladder probe on the Priv (fastboot PID 0fca:8030, Mux
+  protocol) settles this. A deterministic Priv canary turns the
+  Priv's nv_sig overflow (section 11) into a full ROP unlock.
+- LG/older LK B8-era devices (G4/V10 laf) predate the hardened builds.
+
+## 11. BlackBerry authboot attack surface (nv_sig + Mux + pcauthtool)
+
+BlackBerry's LK builds add an authboot/RTAS layer (channel: `AUTHBOOT`,
+`NVSIG`, `DBGSIG`, `DDT`, `STP` - one keyed blob per channel per carrier
+variant) that gates fastboot commands and boot-image verification.
+
+Two wire generations:
+
+- **Mux protocol (Priv AAW068, DTEK era)**: `bbry/app/bbmux/mux.c` - USB
+  channel mux with a Control Channel, channel registration/open, password
+  challenge w/ attempt counting, encryption negotiation
+  ("Host encryption version %d.%d not supported"), and RTAS ops dispatched
+  by tool authorization (`rtas_init_tool_authorization`,
+  `mux_msg_handler`). No 0xbba78701 cookie (that constant does not exist in
+  the Priv image).
+- **pcauthtool protocol (KEYone ABL766+)**: fixed cookie `0xbba78701`,
+  code-dispatched frames (0x2000 handshake / 0x2003 password / 0x2005
+  nv_sig response; 0x1000-0x1016 session codes), reversed from the leaked
+  Priv-era `pcauthtool.exe` (`notes/59-60`). The auth interface is a
+  separate USB interface (0FCA:8040 intf 1 on KEYone fastboot).
+
+The shared weak point - the **nv_sig challenge-response verifier** - is a
+stack overflow in both generations:
+
+| Device | Function | Bug |
+|---|---|---|
+| KEYone ABL766 | `rtas_verify_nv_sig_response` @0x8f658f30 | `memcpy(sp+0x4c, blob+5, sl)` with unchecked ASN.1 length `sl=blob[4]` (blob `30 81 L 02 sl <data> 02 r4 <r4data>`); canary at buffer+0x88; saved PC at +0xb0. Live-proven canary oracle (`notes/60`). |
+| Priv AAW068 | @0xf953e68 ("RTAS verify NV sig response") | Same ASN.1 parse, but with partial checks: total len u16 r6 (<=258 enforced via [2]==r6-3), payload byte sb<=253 checked only against r6 (`r6 >= sb+5`); stack buf 68 B, canary at +0x88, saved LR reachable with sb in 181..253. **Canary-gated unless the section-10 deterministic-fallback applies.** |
+
+Exploitation endgame is identical in both: ROP -> `set_device_unlock` /
+devinfo is_unlocked write + `write_device_info` (TZ/RPMB persist) + reboot,
+with wipe defusal (`securewipe` / `BbryWipeLib` siblings are un-gated but
+must not fire during the unlock transition).
 
 ---
 
